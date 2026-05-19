@@ -38,6 +38,7 @@
 
         const CoinFlipGame = {
             isFlipping: false, selectedSide: null, streak: 0, DOM: {},
+            currentRotation: 0,
 
             init() {
                 this.DOM = { coin: document.getElementById('coin-element'), betInput: document.getElementById('coinflip-bet'), btnFlip: document.getElementById('btn-coinflip-flip'), btnHeads: document.getElementById('btn-choice-heads'), btnTails: document.getElementById('btn-choice-tails'), streakDisplay: document.getElementById('coinflip-streak-display') };
@@ -49,14 +50,13 @@
                 this.selectedSide = side;
                 this.DOM.btnHeads.classList.toggle('selected', side === 'heads');
                 this.DOM.btnTails.classList.toggle('selected', side === 'tails');
-                
                 this.DOM.btnFlip.disabled = false;
                 this.DOM.btnFlip.innerText = `Flip for ${side.toUpperCase()}`;
             },
 
             flip() {
                 if(this.isFlipping || !this.selectedSide) return;
-                
+
                 const bet = parseFloat(this.DOM.betInput.value);
                 if(isNaN(bet) || bet <= 0 || bet > Platform.balance) return alert("Invalid Bet!");
 
@@ -65,35 +65,28 @@
                 this.DOM.btnFlip.disabled = true;
 
                 const isHeads = Math.random() >= 0.5;
-                const targetSide = isHeads ? 'heads' : 'tails';
-                
-                const currentRotation = this.getRotation();
-                const baseRotations = Math.floor(currentRotation / 360) * 360 + 1800; 
-                const finalRotation = isHeads ? baseRotations : baseRotations + 180;
 
-                this.DOM.coin.style.transform = `rotateY(${finalRotation}deg)`;
+                // Always add 5 full rotations (1800°) so the spin is visible every flip.
+                // rotateY lands on "heads" when (rotation / 180) is even — nudge by 180
+                // if the base lands on the wrong face.
+                let next = this.currentRotation + 1800;
+                const wouldShowHeads = ((next / 180) % 2) === 0;
+                if (isHeads !== wouldShowHeads) next += 180;
+
+                this.currentRotation = next;
+                this.DOM.coin.style.transform = `rotateY(${next}deg)`;
 
                 setTimeout(() => {
                     this.isFlipping = false;
                     this.DOM.btnFlip.disabled = false;
 
-                    if(this.selectedSide === targetSide) {
+                    if (this.selectedSide === (isHeads ? 'heads' : 'tails')) {
                         Platform.adjustBalance(bet * 2);
                         this.streak++;
                     } else this.streak = 0;
-                    
+
                     this.DOM.streakDisplay.innerText = `Streak: ${this.streak}`;
                 }, 2000);
-            },
-
-            getRotation() {
-                const st = window.getComputedStyle(this.DOM.coin, null);
-                const tm = st.getPropertyValue("-webkit-transform") || st.getPropertyValue("transform");
-                if (tm !== "none") {
-                    const values = tm.split('(')[1].split(')')[0].split(',');
-                    return Math.round(Math.atan2(values[1], values[0]) * (180/Math.PI));
-                }
-                return 0;
             }
         };
 
