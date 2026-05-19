@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Lobby - Tact's Casino</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Specific CSS for the Lobby */
+        .lobby-container {
+            text-align: center;
+            max-width: 950px;
+            margin: 0 auto;
+        }
+        .lobby-container h1 {
+            color: var(--gold);
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .lobby-container p {
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            margin-bottom: 40px;
+        }
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 25px;
+        }
+        .game-card {
+            background: var(--bg-panel);
+            border: 1px solid var(--bg-hover);
+            border-radius: 15px;
+            padding: 35px 20px;
+            text-decoration: none;
+            color: var(--text-main);
+            transition: all 0.25s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+        .game-card:hover {
+            background: var(--bg-hover);
+            transform: translateY(-5px);
+            border-color: var(--accent);
+            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.2);
+        }
+        .game-icon {
+            font-size: 4rem;
+            transition: transform 0.3s ease;
+        }
+        .game-card:hover .game-icon {
+            transform: scale(1.1) rotate(5deg);
+        }
+        .game-title {
+            font-size: 1.4rem;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+        }
+        /* Custom subtle badge for the newly launched Sugar Rush & Plinko */
+        .badge-new {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: var(--danger);
+            color: white;
+            font-size: 0.75rem;
+            font-weight: bold;
+            padding: 3px 8px;
+            border-radius: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar" id="sidebar-container"></div>
+    
+    <div class="main-content">
+        <div class="top-bar" id="topbar-container"></div>
+        
+        <div class="game-stage">
+            <div class="lobby-container">
+                <h1>Welcome to Tact's Casino</h1>
+                <p>Select a game below or from the sidebar menu to start placing bets!</p>
+                
+                <div class="game-grid">
+                    <a href="slots.html" class="game-card">
+                        <div class="game-icon">🎰</div>
+                        <div class="game-title">Foodie Slots</div>
+                    </a>
+                    
+                    <a href="sugar-rush.html" class="game-card">
+                        <span class="badge-new" style="background: #ff69b4;">Hot</span>
+                        <div class="game-icon">🍬</div>
+                        <div class="game-title">Sugar Rush</div>
+                    </a>
+                    
+                    <a href="crash.html" class="game-card">
+                        <div class="game-icon">📈</div>
+                        <div class="game-title">Crash</div>
+                    </a>
+                    
+                    <a href="coinflip.html" class="game-card">
+                        <div class="game-icon">🪙</div>
+                        <div class="game-title">Coin Flip</div>
+                    </a>
+
+                    <a href="mines.html" class="game-card">
+                        <div class="game-icon">💣</div>
+                        <div class="game-title">Mines</div>
+                    </a>
+
+                    <a href="hilo.html" class="game-card">
+                        <div class="game-icon">📉</div>
+                        <div class="game-title">HiLo</div>
+                    </a>
+
+                    <a href="plinko.html" class="game-card">
+                        <span class="badge-new">New</span>
+                        <div class="game-icon">🔽</div>
+                        <div class="game-title">Plinko</div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="platform.js"></script>
+    <script>
+        // Initialize the platform. Passing 'home' keeps sidebar highlighting clear until they enter a game.
+        Platform.init('home');
+    </script>
+</body>
+</html>

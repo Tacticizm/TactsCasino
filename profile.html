@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Profile - Tact's Casino</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* FIX: Ensure the profile view container can expand and scroll naturally */
+        .profile-view-wrapper {
+            max-width: 900px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            height: 100%;
+        }
+
+        .history-card {
+            background: var(--bg-panel);
+            border: 1px solid var(--bg-hover);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            display: flex;
+            flex-direction: column;
+            /* Allows the card to scale dynamically but stay bounded */
+            max-height: calc(100vh - 180px); 
+        }
+
+        /* FIX: Dedicated, independent scrolling body wrapper for the table records */
+        .table-scroll-container {
+            overflow-y: auto;
+            margin-top: 15px;
+            border-radius: 8px;
+            background: var(--bg-base);
+            border: 1px solid var(--bg-hover);
+            padding-right: 4px; /* Space for custom scrollbar */
+        }
+
+        .history-table { 
+            width: 100%; 
+            border-collapse: collapse; 
+        }
+        
+        /* FIX: Make header row sticky so it stays visible while scrolling through 50+ plays */
+        .history-table th { 
+            position: sticky;
+            top: 0;
+            background: #161f30; /* Dark contrast background for sticky header */
+            padding: 14px; 
+            text-align: left; 
+            color: var(--accent); 
+            text-transform: uppercase; 
+            font-size: 0.85rem; 
+            letter-spacing: 0.5px;
+            z-index: 10;
+            border-bottom: 2px solid var(--bg-hover);
+        }
+        
+        .history-table td { 
+            padding: 12px 14px; 
+            text-align: left; 
+            border-bottom: 1px solid var(--bg-hover); 
+            font-size: 0.95rem;
+        }
+        
+        .history-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .win-text { color: var(--success); font-weight: bold; }
+        .loss-text { color: var(--text-muted); }
+
+        /* Custom Modern Scrollbar layout for table container viewports */
+        .table-scroll-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        .table-scroll-container::-webkit-scrollbar-track {
+            background: var(--bg-base);
+        }
+        .table-scroll-container::-webkit-scrollbar-thumb {
+            background: var(--bg-hover);
+            border-radius: 10px;
+        }
+        .table-scroll-container::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar" id="sidebar-container"></div>
+    <div class="main-content">
+        <div class="top-bar" id="topbar-container"></div>
+        <div class="game-stage" style="align-items: flex-start; overflow-y: auto;">
+            
+            <div class="profile-view-wrapper">
+                <div class="game-header" style="margin-bottom: 0; text-align: left;">
+                    <h2>👤 My Player Profile</h2>
+                </div>
+                
+                <div class="history-card">
+                    <h3 style="color: var(--gold); font-size: 1.3rem;">Recent Game History</h3>
+                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 2px;">Tracking your last 50 game rounds across the platform.</p>
+                    
+                    <div class="table-scroll-container">
+                        <table class="history-table">
+                            <thead>
+                                <tr>
+                                    <th>Date / Time</th>
+                                    <th>Game Title</th>
+                                    <th>Wager Bet</th>
+                                    <th>Final Payout</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-body">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="platform.js"></script>
+    <script>
+        Platform.init('profile');
+
+        const tbody = document.getElementById('history-body');
+        const history = Platform.userData.history;
+
+        if (!history || history.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 30px; color: var(--text-muted); font-style: italic;">No betting history logged yet. Go play some rounds!</td></tr>`;
+        } else {
+            history.forEach(game => {
+                const tr = document.createElement('tr');
+                const isWin = game.win > 0;
+                
+                // Capitalize game name cleanly
+                const displayGameName = game.game.charAt(0).toUpperCase() + game.game.slice(1);
+                
+                tr.innerHTML = `
+                    <td style="color: var(--text-muted); font-size: 0.85rem;">${game.date}</td>
+                    <td style="font-weight: bold; color: var(--text-main);">${displayGameName}</td>
+                    <td>$${game.bet.toFixed(2)}</td>
+                    <td class="${isWin ? 'win-text' : 'loss-text'}">
+                        ${isWin ? `+$${game.win.toFixed(2)}` : `$${game.win.toFixed(2)}`}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+    </script>
+</body>
+</html>

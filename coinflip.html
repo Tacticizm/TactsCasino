@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Coin Flip - Casino</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="sidebar" id="sidebar-container"></div>
+    <div class="main-content">
+        <div class="top-bar" id="topbar-container"></div>
+        <div class="game-stage">
+            <div class="game-view" id="view-coinflip">
+                <div class="game-header"><h2>Coin Flip</h2></div>
+                <div class="coin-container">
+                    <div class="coin" id="coin-element">
+                        <div class="coin-face coin-front">H</div>
+                        <div class="coin-face coin-back">T</div>
+                    </div>
+                </div>
+                <div class="streak-display" id="coinflip-streak-display">Streak: 0</div><br>
+                <div class="control-group">
+                    <label>Bet Amount</label>
+                    <input type="number" id="coinflip-bet" class="input-dark" value="10" min="1">
+                </div>
+                <div class="flip-controls">
+                    <button class="btn-action btn-choice" id="btn-choice-heads" onclick="CoinFlipGame.selectSide('heads')">Heads</button>
+                    <button class="btn-action btn-choice" id="btn-choice-tails" onclick="CoinFlipGame.selectSide('tails')">Tails</button>
+                </div>
+                <button class="btn-action" id="btn-coinflip-flip" disabled>Select Side to Flip</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="platform.js"></script>
+    <script>
+        Platform.init('coinflip');
+
+        const CoinFlipGame = {
+            isFlipping: false, selectedSide: null, streak: 0, DOM: {},
+
+            init() {
+                this.DOM = { coin: document.getElementById('coin-element'), betInput: document.getElementById('coinflip-bet'), btnFlip: document.getElementById('btn-coinflip-flip'), btnHeads: document.getElementById('btn-choice-heads'), btnTails: document.getElementById('btn-choice-tails'), streakDisplay: document.getElementById('coinflip-streak-display') };
+                this.DOM.btnFlip.onclick = () => this.flip();
+            },
+
+            selectSide(side) {
+                if(this.isFlipping) return;
+                this.selectedSide = side;
+                this.DOM.btnHeads.classList.toggle('selected', side === 'heads');
+                this.DOM.btnTails.classList.toggle('selected', side === 'tails');
+                
+                this.DOM.btnFlip.disabled = false;
+                this.DOM.btnFlip.innerText = `Flip for ${side.toUpperCase()}`;
+            },
+
+            flip() {
+                if(this.isFlipping || !this.selectedSide) return;
+                
+                const bet = parseFloat(this.DOM.betInput.value);
+                if(isNaN(bet) || bet <= 0 || bet > Platform.balance) return alert("Invalid Bet!");
+
+                Platform.adjustBalance(-bet);
+                this.isFlipping = true;
+                this.DOM.btnFlip.disabled = true;
+
+                const isHeads = Math.random() >= 0.5;
+                const targetSide = isHeads ? 'heads' : 'tails';
+                
+                const currentRotation = this.getRotation();
+                const baseRotations = Math.floor(currentRotation / 360) * 360 + 1800; 
+                const finalRotation = isHeads ? baseRotations : baseRotations + 180;
+
+                this.DOM.coin.style.transform = `rotateY(${finalRotation}deg)`;
+
+                setTimeout(() => {
+                    this.isFlipping = false;
+                    this.DOM.btnFlip.disabled = false;
+
+                    if(this.selectedSide === targetSide) {
+                        Platform.adjustBalance(bet * 2);
+                        this.streak++;
+                    } else this.streak = 0;
+                    
+                    this.DOM.streakDisplay.innerText = `Streak: ${this.streak}`;
+                }, 2000);
+            },
+
+            getRotation() {
+                const st = window.getComputedStyle(this.DOM.coin, null);
+                const tm = st.getPropertyValue("-webkit-transform") || st.getPropertyValue("transform");
+                if (tm !== "none") {
+                    const values = tm.split('(')[1].split(')')[0].split(',');
+                    return Math.round(Math.atan2(values[1], values[0]) * (180/Math.PI));
+                }
+                return 0;
+            }
+        };
+
+        CoinFlipGame.init();
+    </script>
+</body>
+</html>

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login - Tact's Casino</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .login-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            width: 100vw;
+            background: radial-gradient(circle at center, var(--bg-panel), var(--bg-base));
+        }
+        .login-box {
+            background: var(--bg-panel);
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            text-align: center;
+            width: 100%;
+            max-width: 400px;
+            border: 1px solid var(--accent);
+        }
+        .login-box h1 { color: var(--gold); margin-bottom: 10px; font-size: 2.5rem; }
+        .login-box p { color: var(--text-muted); margin-bottom: 30px; }
+    </style>
+</head>
+<body>
+    <div class="login-wrapper">
+        <div class="login-box">
+            <h1>🎲 TACT'S CASINO</h1>
+            <p>Login or create an account to start playing.</p>
+            
+            <div class="control-group" style="text-align: left;">
+                <label>Username</label>
+                <input type="text" id="username-input" class="input-dark" placeholder="Enter any username...">
+            </div>
+            
+            <button class="btn-action" onclick="handleLogin()">Enter Casino</button>
+        </div>
+    </div>
+
+    <script src="platform.js"></script>
+    <script src="platform.js"></script>
+    <script src="platform.js"></script>
+    <script>
+        Platform.init('login');
+
+        function handleLogin() {
+            const inputField = document.getElementById('username-input');
+            const username = inputField.value;
+
+            if (!username || username.trim() === '') {
+                Platform.showAlert("Please enter a username to access the casino.", "Login Error");
+                return;
+            }
+
+            const cleanName = username.trim();
+            const accountExists = Platform.checkUserExists(cleanName);
+
+            if (accountExists) {
+                Platform.login(cleanName);
+            } else {
+                // Open the sleek custom modal
+                Platform.showConfirm(
+                    `There is no user by the name "${cleanName}". Would you like to create a brand new account under this name, or double-check your spelling?`,
+                    () => {
+                        Platform.login(cleanName);
+                    },
+                    "Account Not Found"
+                );
+                
+                // Customize the confirmation button layouts to look perfect
+                const yesBtn = document.getElementById('modal-confirm-yes-btn');
+                const noBtn = document.getElementById('modal-confirm-no-btn');
+                if (yesBtn && noBtn) {
+                    yesBtn.innerText = "Create Account";
+                    yesBtn.style.background = "var(--success)";
+                    noBtn.innerText = "Check Spelling";
+                }
+            }
+        }
+    </script>
+</body>
+</html>

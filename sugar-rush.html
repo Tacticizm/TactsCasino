@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sugar Rush - Tact's Casino</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        #view-sugar { text-align: center; max-width: 650px; margin: 0 auto; position: relative; }
+        
+        .display-modes {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .btn-mode {
+            background: var(--bg-hover);
+            color: var(--text-muted);
+            border: 1px solid #475569;
+            padding: 4px 10px;
+            font-size: 0.85rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+        .btn-mode:hover { color: var(--text-main); border-color: #ff69b4; }
+        .btn-mode.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+        .sugar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 6px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            border: 2px solid #ff69b4;
+            box-shadow: 0 0 20px rgba(255, 105, 180, 0.3);
+            position: relative;
+            max-width: 480px;
+            margin-left: auto;
+            margin-right: auto;
+            overflow: hidden; 
+        }
+
+        .sugar-cell {
+            aspect-ratio: 1;
+            background: var(--bg-base);
+            border-radius: 6px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.8rem;
+            position: relative;
+            transition: background 0.2s;
+            user-select: none;
+        }
+
+        .sugar-cell span {
+            display: inline-block;
+        }
+
+        /* Targeted cascading drop animation */
+        .sugar-cell.fall-drop span {
+            animation: candyDrop 0.45s cubic-bezier(0.25, 1, 0.5, 1.1) forwards;
+        }
+
+        @keyframes candyDrop {
+            0% { transform: translateY(-350px); opacity: 0; }
+            60% { opacity: 1; }
+            85% { transform: translateY(4px); } 
+            100% { transform: translateY(0); opacity: 1; }
+        }
+
+        .sugar-cell.win-pulse {
+            background: rgba(255, 215, 0, 0.4);
+            box-shadow: inset 0 0 10px var(--gold);
+            transform: scale(1.05);
+            z-index: 5;
+            transition: 0.2s;
+        }
+
+        .sugar-cell.explode span {
+            transform: scale(0);
+            opacity: 0;
+            transition: 0.25s ease-out;
+        }
+
+        .spot-multiplier {
+            position: absolute;
+            bottom: 1px;
+            right: 1px;
+            background: #ffd700;
+            color: #000;
+            font-size: 0.65rem;
+            font-weight: 900;
+            padding: 1px 4px;
+            border-radius: 3px;
+            z-index: 10;
+            box-shadow: 1px 1px 0 #000;
+        }
+
+        .sugar-float {
+            position: absolute;
+            color: #00ff2a;
+            font-size: 18px;
+            font-weight: 900;
+            text-shadow: 2px 2px 0 #000, -2px -2px 0 #000;
+            z-index: 20;
+            pointer-events: none;
+            animation: floatUp 2s ease-out forwards;
+            white-space: nowrap;
+        }
+
+        @keyframes floatUp {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+            15% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+            100% { opacity: 0; transform: translate(-50%, -120%) scale(1.5); }
+        }
+
+        .bonus-tracker {
+            display: none;
+            background: linear-gradient(45deg, #8a2be2, #ff69b4);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 10px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin: 10px auto;
+            width: max-content;
+            box-shadow: 0 0 20px rgba(255, 105, 180, 0.6);
+            border: 2px solid var(--gold);
+            animation: pulse 1s infinite alternate;
+        }
+
+        .status-bar {
+            background: var(--bg-panel);
+            padding: 8px 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            color: #ff69b4;
+            font-weight: bold;
+            border: 1px solid var(--bg-hover);
+        }
+
+        /* Splash Screen Overlays */
+        .splash-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 1000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .splash-content {
+            background: radial-gradient(circle, var(--bg-panel), var(--bg-base));
+            padding: 50px;
+            border-radius: 20px;
+            border: 3px solid var(--gold);
+            text-align: center;
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            box-shadow: 0 0 50px rgba(255, 215, 0, 0.5);
+            min-width: 400px;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .splash-content h1 { color: var(--gold); font-size: 3.5rem; text-shadow: 0 0 20px rgba(255,215,0,0.8); margin-bottom: 10px; text-transform: uppercase; }
+        .splash-content h2 { color: var(--success); font-size: 4rem; margin-bottom: 15px; text-shadow: 2px 2px 0 #000; }
+        .splash-content p { color: var(--text-main); font-size: 1.5rem; font-weight: bold; }
+        
+        .splash-btn {
+            background: var(--success);
+            color: white; border: none; padding: 15px 40px; font-size: 1.5rem;
+            font-weight: bold; border-radius: 10px; cursor: pointer; margin-top: 25px;
+            transition: 0.2s;
+            box-shadow: 0 5px 15px rgba(34, 197, 94, 0.4);
+        }
+        .splash-btn:hover { transform: scale(1.05); background: #2df574; }
+    </style>
+</head>
+<body>
+    <div class="sidebar" id="sidebar-container"></div>
+    <div class="main-content" id="main-content-wrapper">
+        <div class="top-bar" id="topbar-container"></div>
+        
+        <div class="game-stage">
+            <div class="game-view active" id="view-sugar">
+                <div class="game-header" style="margin-bottom: 10px;">
+                    <h2 style="color: #ff69b4; text-shadow: 0 0 10px rgba(255,105,180,0.5); font-size: 1.6rem;">🍬 Sugar Rush</h2>
+                </div>
+                
+                <div class="slots-ui" style="padding: 10px; margin-bottom: 10px;">
+                    <div>Win: <span id="sugar-win" style="color:var(--gold)">0</span></div>
+                    <div>
+                        Bet: <button class="slots-btn" id="sugar-btn-down">-</button>
+                        <span id="sugar-bet" style="margin: 0 10px; font-weight:bold;">10</span>
+                        <button class="slots-btn" id="sugar-btn-up">+</button>
+                    </div>
+                </div>
+                
+                <div class="sugar-grid" id="sugar-grid"></div>
+
+                <div class="bonus-tracker" id="bonus-tracker">
+                    🌟 Bonus Total Win: <span id="bonus-total-win">0</span> 🌟
+                </div>
+                
+                <div class="status-bar" id="sugar-status">Cluster 5+ matching candies!</div>
+                
+                <div style="display: flex; gap: 10px; justify-content: center;">
+                    <button class="btn-action" style="background: #8a2be2; padding: 12px;" id="sugar-btn-buy">Buy Bonus (100x)</button>
+                    <button class="btn-action" style="background: #ff69b4; padding: 12px;" id="sugar-btn-spin">SPIN</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="splash-overlay" class="splash-overlay">
+        <div class="splash-content">
+            <h1 id="splash-title">BIG WIN!</h1>
+            <h2 id="splash-amount">+0.00</h2>
+            <p id="splash-subtext">Awesome!</p>
+            <button class="splash-btn" id="splash-btn" style="display: none;">Collect</button>
+        </div>
+    </div>
+
+    <script src="platform.js"></script>
+    <script>
+        Platform.init('sugar');
+
+        const SugarGame = {
+            bet: 10,
+            isSpinning: false,
+            freeSpins: 0,
+            totalFreeSpinsPlayed: 0, 
+            currentTumbleWin: 0,
+            bonusTotalWin: 0, 
+            grid: [],
+            explosionTracker: [], 
+            
+            symbols: {
+                gummy:  { emoji: '🐻', weight: 150, basePayout: 1.0 }, 
+                heart:  { emoji: '💖', weight: 200, basePayout: 0.8 },
+                bean:   { emoji: '🍬', weight: 250, basePayout: 0.5 },
+                star:   { emoji: '⭐', weight: 300, basePayout: 0.4 },
+                bear2:  { emoji: '🐨', weight: 350, basePayout: 0.3 },
+                drop:   { emoji: '💧', weight: 400, basePayout: 0.2 },
+                round:  { emoji: '🍭', weight: 450, basePayout: 0.1 }, 
+                scatter:{ emoji: '🚀', weight: 3,  basePayout: 0   }  
+            },
+
+            DOM: {},
+
+            init() {
+                this.DOM = {
+                    grid: document.getElementById('sugar-grid'),
+                    bet: document.getElementById('sugar-bet'),
+                    win: document.getElementById('sugar-win'),
+                    status: document.getElementById('sugar-status'),
+                    btnSpin: document.getElementById('sugar-btn-spin'),
+                    btnBuy: document.getElementById('sugar-btn-buy'),
+                    btnUp: document.getElementById('sugar-btn-up'),
+                    btnDown: document.getElementById('sugar-btn-down'),
+                    bonusTracker: document.getElementById('bonus-tracker'),
+                    bonusTotalWin: document.getElementById('bonus-total-win'),
+                    splashOverlay: document.getElementById('splash-overlay'),
+                    splashTitle: document.getElementById('splash-title'),
+                    splashAmount: document.getElementById('splash-amount'),
+                    splashSubtext: document.getElementById('splash-subtext'),
+                    splashBtn: document.getElementById('splash-btn')
+                };
+
+                this.grid = Array(7).fill(0).map(() => Array(7).fill(null));
+                this.explosionTracker = Array(7).fill(0).map(() => Array(7).fill(0));
+
+                this.fillGridRandom(true);
+                this.renderGrid([]); 
+                this.updateUI();
+
+                this.DOM.btnUp.onclick = () => this.changeBet(5);
+                this.DOM.btnDown.onclick = () => this.changeBet(-5);
+                this.DOM.btnSpin.onclick = () => this.spin(false);
+                this.DOM.btnBuy.onclick = () => this.spin(true);
+            },
+
+            getRandomSymbol(allowScatter = true) {
+                let total = Object.values(this.symbols).reduce((sum, sym) => sum + sym.weight, 0);
+                if (!allowScatter) total -= this.symbols.scatter.weight;
+
+                let r = Math.floor(Math.random() * total);
+                for (const [key, sym] of Object.entries(this.symbols)) {
+                    if (!allowScatter && key === 'scatter') continue;
+                    if (r < sym.weight) return key;
+                    r -= sym.weight;
+                }
+                return 'round';
+            },
+
+            fillGridRandom(allowScatter = true) {
+                for(let r = 0; r < 7; r++) {
+                    for(let c = 0; c < 7; c++) {
+                        this.grid[r][c] = this.getRandomSymbol(allowScatter);
+                    }
+                }
+            },
+
+            renderGrid(cellsToAnimate = []) {
+                this.DOM.grid.innerHTML = '';
+                for(let r = 0; r < 7; r++) {
+                    for(let c = 0; c < 7; c++) {
+                        const cell = document.createElement('div');
+                        const shouldAnimate = cellsToAnimate.some(([ar, ac]) => ar === r && ac === c);
+                        cell.className = shouldAnimate ? 'sugar-cell fall-drop' : 'sugar-cell';
+                        cell.id = `cell-${r}-${c}`;
+                        
+                        if (shouldAnimate) {
+                            cell.style.animationDelay = `${(6 - r) * 0.03}s`;
+                        }
+
+                        let html = `<span>${this.symbols[this.grid[r][c]].emoji}</span>`;
+                        
+                        let expCount = this.explosionTracker[r][c];
+                        if (expCount >= 2) {
+                            let mult = Math.min(128, Math.pow(2, expCount - 1));
+                            html += `<div class="spot-multiplier">${mult}x</div>`;
+                        }
+
+                        cell.innerHTML = html;
+                        this.DOM.grid.appendChild(cell);
+                    }
+                }
+            },
+
+            changeBet(amt) {
+                if(this.isSpinning || this.freeSpins > 0) return;
+                if (this.bet % 5 !== 0) {
+                    this.bet = amt > 0 ? Math.ceil(this.bet / 5) * 5 : Math.floor(this.bet / 5) * 5; 
+                } else this.bet += amt;
+                if(this.bet < 5) this.bet = 5;
+                this.updateUI();
+            },
+
+            updateUI() {
+                this.DOM.bet.innerText = this.bet;
+                this.DOM.btnBuy.innerText = `Buy Bonus (${this.bet * 100})`;
+                this.DOM.btnSpin.innerText = this.freeSpins > 0 ? `FREE SPINS (${this.freeSpins})` : `SPIN`;
+            },
+
+            showSplash(title, amount, subtext, autoClose = false) {
+                this.DOM.splashTitle.innerText = title;
+                this.DOM.splashAmount.innerText = `$${amount.toFixed(2)}`;
+                this.DOM.splashSubtext.innerText = subtext;
+                this.DOM.splashOverlay.style.display = 'flex';
+
+                if (autoClose) {
+                    this.DOM.splashBtn.style.display = 'none';
+                    setTimeout(() => {
+                        this.DOM.splashOverlay.style.display = 'none';
+                    }, 2500); 
+                } else {
+                    this.DOM.splashBtn.style.display = 'inline-block';
+                    this.DOM.splashBtn.onclick = () => {
+                        this.DOM.splashOverlay.style.display = 'none';
+                        this.DOM.bonusTracker.style.display = 'none';
+                        this.bonusTotalWin = 0;
+                        this.totalFreeSpinsPlayed = 0;
+                        this.DOM.status.innerText = "Ready to spin!";
+                    };
+                }
+            },
+
+            async spin(isBonusBuy = false) {
+                if(this.isSpinning) return;
+                
+                let cost = isBonusBuy ? this.bet * 100 : this.bet;
+                if(this.freeSpins === 0) {
+                    if(Platform.balance < cost) return alert("Insufficient Balance!");
+                    Platform.adjustBalance(-cost);
+                    this.explosionTracker = Array(7).fill(0).map(() => Array(7).fill(0));
+                } else {
+                    this.freeSpins--;
+                }
+
+                this.isSpinning = true;
+                this.currentTumbleWin = 0;
+                this.DOM.win.innerText = "0";
+                this.DOM.status.innerText = "Tumbling...";
+                this.updateUI();
+
+                this.fillGridRandom(true);
+                
+                if(isBonusBuy) {
+                    let spots = [];
+                    while(spots.length < 3) {
+                        let r = Math.floor(Math.random()*7), c = Math.floor(Math.random()*7);
+                        if(!spots.includes(`${r}-${c}`)) { spots.push(`${r}-${c}`); this.grid[r][c] = 'scatter'; }
+                    }
+                }
+                
+                let allCells = [];
+                for(let r=0; r<7; r++) for(let c=0; c<7; c++) allCells.push([r,c]);
+
+                this.renderGrid(allCells);
+                await new Promise(r => setTimeout(r, 550));
+                await this.processTumbles();
+            },
+
+            async processTumbles() {
+                let clusters = this.findClusters();
+                
+                if (clusters.length === 0) {
+                    this.finishSpin();
+                    return;
+                }
+
+                let tumbleWin = 0;
+
+                clusters.forEach(cluster => {
+                    cluster.forEach(([r, c]) => {
+                        document.getElementById(`cell-${r}-${c}`).classList.add('win-pulse');
+                    });
+                });
+
+                await new Promise(r => setTimeout(r, 400));
+
+                clusters.forEach(cluster => {
+                    let symKey = this.grid[cluster[0][0]][cluster[0][1]];
+                    let emoji = this.symbols[symKey].emoji;
+                    let size = cluster.length;
+                    
+                    let sizeMult = Math.min(10, size - 4); 
+                    let clusterBaseWin = this.symbols[symKey].basePayout * sizeMult * this.bet;
+                    let totalSpotMult = 0;
+
+                    cluster.forEach(([r, c]) => {
+                        let expCount = this.explosionTracker[r][c];
+                        if (expCount >= 2) {
+                            totalSpotMult += Math.min(128, Math.pow(2, expCount - 1));
+                        }
+                    });
+
+                    let finalClusterWin = totalSpotMult > 0 ? clusterBaseWin * totalSpotMult : clusterBaseWin;
+                    tumbleWin += finalClusterWin;
+
+                    cluster.forEach(([r, c]) => {
+                        let cell = document.getElementById(`cell-${r}-${c}`);
+                        cell.classList.remove('win-pulse');
+                        cell.classList.add('explode');
+                        this.explosionTracker[r][c]++; 
+                        this.grid[r][c] = null; 
+                    });
+
+                    let mid = cluster[Math.floor(size/2)];
+                    this.spawnFloatingWin(mid[0], mid[1], finalClusterWin, emoji);
+                });
+
+                this.currentTumbleWin += tumbleWin;
+                this.DOM.win.innerText = this.currentTumbleWin.toFixed(2);
+
+                await new Promise(r => setTimeout(r, 300));
+
+                let alteredCells = [];
+
+                for (let c = 0; c < 7; c++) {
+                    let writeY = 6;
+                    for (let r = 6; r >= 0; r--) {
+                        if (this.grid[r][c] !== null) {
+                            if (writeY !== r) {
+                                alteredCells.push([writeY, c]);
+                            }
+                            this.grid[writeY][c] = this.grid[r][c];
+                            writeY--;
+                        }
+                    }
+                    for (let r = writeY; r >= 0; r--) {
+                        this.grid[r][c] = this.getRandomSymbol(false);
+                        alteredCells.push([r, c]);
+                    }
+                }
+
+                this.renderGrid(alteredCells);
+                await new Promise(r => setTimeout(r, 550)); 
+                
+                this.processTumbles();
+            },
+
+            findClusters() {
+                let visited = Array(7).fill(0).map(()=>Array(7).fill(false));
+                let clusters = [];
+                
+                for(let r=0; r<7; r++) {
+                    for(let c=0; c<7; c++) {
+                        if(!visited[r][c] && this.grid[r][c] !== 'scatter') {
+                            let type = this.grid[r][c];
+                            let cluster = [];
+                            let queue = [[r,c]];
+                            visited[r][c] = true;
+                            
+                            while(queue.length > 0) {
+                                let [currR, currC] = queue.shift();
+                                cluster.push([currR, currC]);
+                                
+                                let dirs = [[-1,0],[1,0],[0,-1],[0,1]];
+                                for(let d of dirs) {
+                                    let nr = currR+d[0], nc = currC+d[1];
+                                    if(nr>=0 && nr<7 && nc>=0 && nc<7 && !visited[nr][nc] && this.grid[nr][nc] === type) {
+                                        visited[nr][nc] = true;
+                                        queue.push([nr, nc]);
+                                    }
+                                }
+                            }
+                            if(cluster.length >= 5) clusters.push(cluster);
+                        }
+                    }
+                }
+                return clusters;
+            },
+
+            spawnFloatingWin(r, c, amount, emoji) {
+                const cell = document.getElementById(`cell-${r}-${c}`);
+                const winEl = document.createElement('div');
+                winEl.className = 'sugar-float';
+                winEl.textContent = `${emoji} +${amount.toFixed(2)}`;
+                winEl.style.top = '50%'; winEl.style.left = '50%'; winEl.style.transform = 'translate(-50%, -50%)';
+                cell.appendChild(winEl);
+                setTimeout(() => { if (winEl.parentElement) winEl.parentElement.removeChild(winEl); }, 2000);
+            },
+
+            finishSpin() {
+                let scatters = 0;
+                for(let r=0; r<7; r++) {
+                    for(let c=0; c<7; c++) {
+                        if(this.grid[r][c] === 'scatter') scatters++;
+                    }
+                }
+
+                if (scatters >= 3) {
+                    if (this.DOM.bonusTracker.style.display === 'block' || this.freeSpins > 0) {
+                        this.DOM.status.innerText = "🚀 +10 FREE SPINS RETRIGGERED! 🚀";
+                        this.freeSpins += 10;
+                        this.totalFreeSpinsPlayed += 10;
+                        this.bonusTotalWin += this.currentTumbleWin; 
+                        this.DOM.bonusTotalWin.innerText = this.bonusTotalWin.toFixed(2);
+                    } else {
+                        this.DOM.status.innerText = "🚀 10 FREE SPINS TRIGGERED! 🚀";
+                        this.freeSpins += 10;
+                        this.totalFreeSpinsPlayed += 10;
+                        this.bonusTotalWin = this.currentTumbleWin; 
+                        this.DOM.bonusTracker.style.display = 'block';
+                        this.DOM.bonusTotalWin.innerText = this.bonusTotalWin.toFixed(2);
+                    }
+                } else if (this.freeSpins > 0) {
+                    this.bonusTotalWin += this.currentTumbleWin; 
+                    this.DOM.bonusTotalWin.innerText = this.bonusTotalWin.toFixed(2);
+                    if (this.currentTumbleWin > 0) this.DOM.status.innerText = `Tumble Win: ${this.currentTumbleWin.toFixed(2)}`;
+                } else {
+                    if(this.currentTumbleWin > 0) {
+                        this.DOM.status.innerText = `Total Win: ${this.currentTumbleWin.toFixed(2)}`;
+                    } else {
+                        this.DOM.status.innerText = "Try again!";
+                    }
+                }
+
+                if(this.currentTumbleWin > 0) {
+                    Platform.adjustBalance(this.currentTumbleWin);
+                }
+                
+                if (this.freeSpins === 0) {
+                    let totalPaid = this.DOM.bonusTracker.style.display === 'block' ? this.bonusTotalWin : this.currentTumbleWin;
+                    if (totalPaid > 0 || !this.DOM.bonusTracker.style.display === 'block') {
+                        Platform.recordGame('sugar', this.bet, totalPaid);
+                    }
+                }
+
+                this.isSpinning = false;
+                this.updateUI();
+
+                if(this.freeSpins > 0) {
+                    setTimeout(() => this.spin(), 1500);
+                } else if(this.freeSpins === 0 && this.DOM.bonusTracker.style.display === 'block' && scatters < 3) {
+                    this.showSplash(
+                        "FEATURE COMPLETE!", 
+                        this.bonusTotalWin, 
+                        `${this.totalFreeSpinsPlayed} Free Spins Played`, 
+                        false
+                    );
+                } else if (this.freeSpins === 0 && this.currentTumbleWin >= (this.bet * 5)) {
+                    let multiplier = (this.currentTumbleWin / this.bet).toFixed(1);
+                    this.showSplash(
+                        "BIG WIN!", 
+                        this.currentTumbleWin, 
+                        `${multiplier}x Multiplier!`, 
+                        true
+                    );
+                }
+            }
+        };
+
+        SugarGame.init();
+    </script>
+</body>
+</html>

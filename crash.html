@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Crash - Casino</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="sidebar" id="sidebar-container"></div>
+    <div class="main-content">
+        <div class="top-bar" id="topbar-container"></div>
+        <div class="game-stage">
+            <div class="game-view" id="view-crash">
+                <div class="game-header"><h2>Crash</h2></div>
+                <div id="crash-display">1.00x</div>
+                <div class="crash-controls">
+                    <div class="control-group">
+                        <label>Bet Amount</label>
+                        <input type="number" id="crash-bet" class="input-dark" value="10" min="1">
+                    </div>
+                    <div class="control-group" style="display: flex; align-items: flex-end;">
+                        <button class="btn-action" id="btn-crash-action">Place Bet</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="platform.js"></script>
+    <script>
+        Platform.init('crash');
+
+        const CrashGame = {
+            isPlaying: false, betAmt: 0, crashPoint: 1.00, currentMul: 1.00, timer: null, startTime: 0, DOM: {},
+
+            init() {
+                this.DOM = { display: document.getElementById('crash-display'), betInput: document.getElementById('crash-bet'), actionBtn: document.getElementById('btn-crash-action') };
+                this.DOM.actionBtn.onclick = () => { if(!this.isPlaying) this.startRound(); else this.cashOut(); };
+            },
+
+            generateCrashPoint() {
+                const e = 100 / (100 - (Math.random() * 100));
+                return Math.min(1000, Number(Math.max(1.00, e - 0.01).toFixed(2))); 
+            },
+
+            startRound() {
+                const bet = parseFloat(this.DOM.betInput.value);
+                if(isNaN(bet) || bet <= 0 || bet > Platform.balance) return alert("Invalid Bet!");
+
+                Platform.adjustBalance(-bet);
+                this.betAmt = bet; this.crashPoint = this.generateCrashPoint(); this.currentMul = 1.00; this.isPlaying = true;
+                
+                this.DOM.actionBtn.innerText = "Cash Out";
+                this.DOM.actionBtn.style.background = "var(--warning)";
+                this.DOM.display.classList.remove('crash-crashed');
+                this.DOM.betInput.disabled = true;
+
+                this.startTime = Date.now();
+                this.tick();
+            },
+
+            tick() {
+                if(!this.isPlaying) return;
+                const elapsed = Date.now() - this.startTime;
+                this.currentMul = Math.max(1.00, Math.pow(Math.E, 0.00008 * elapsed));
+
+                if(this.currentMul >= this.crashPoint) {
+                    this.currentMul = this.crashPoint;
+                    this.endRound(false); 
+                } else {
+                    this.DOM.display.innerText = this.currentMul.toFixed(2) + "x";
+                    this.timer = requestAnimationFrame(() => this.tick());
+                }
+            },
+
+            cashOut() {
+                if(!this.isPlaying) return;
+                Platform.adjustBalance(this.betAmt * this.currentMul);
+                this.endRound(true); 
+            },
+
+            endRound(success) {
+                this.isPlaying = false;
+            Platform.recordGame('crash', this.betAmt, success ? (this.betAmt * this.currentMul) : 0);
+                cancelAnimationFrame(this.timer);
+                
+                this.DOM.display.innerText = this.currentMul.toFixed(2) + "x";
+                this.DOM.betInput.disabled = false;
+                this.DOM.actionBtn.innerText = "Place Bet";
+                this.DOM.actionBtn.style.background = "var(--success)";
+
+                if(!success) {
+                    this.DOM.display.classList.add('crash-crashed');
+                } else {
+                    this.DOM.display.style.color = "var(--success)";
+                    setTimeout(() => { this.DOM.display.style.color = ""; }, 1500);
+                }
+            }
+        };
+
+        CrashGame.init();
+    </script>
+</body>
+</html>

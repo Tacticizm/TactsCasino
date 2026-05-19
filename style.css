@@ -1,0 +1,221 @@
+:root {
+    --bg-base: #0f172a;
+    --bg-panel: #1e293b;
+    --bg-hover: #334155;
+    --accent: #3b82f6;
+    --accent-hover: #2563eb;
+    --success: #22c55e;
+    --danger: #ef4444;
+    --warning: #eab308;
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --gold: #ffd700;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+body { background-color: var(--bg-base); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
+
+/* --- LAYOUT & SIDEBAR --- */
+.sidebar { width: 240px; background-color: var(--bg-panel); border-right: 1px solid #000; display: flex; flex-direction: column; padding: 20px 0; }
+.logo { font-size: 1.5rem; font-weight: 900; text-align: center; color: var(--accent); margin-bottom: 30px; letter-spacing: 1px; }
+a.nav-item, div.nav-item { padding: 12px 20px; color: var(--text-muted); cursor: pointer; font-weight: 600; transition: 0.2s; display: flex; align-items: center; gap: 10px; text-decoration: none; }
+a.nav-item:hover { background-color: var(--bg-hover); color: var(--text-main); }
+a.nav-item.active { background-color: var(--bg-hover); color: var(--accent); border-left: 4px solid var(--accent); }
+.nav-item.disabled { opacity: 0.5; cursor: not-allowed; }
+
+.main-content { flex: 1; display: flex; flex-direction: column; }
+
+/* --- TOP BAR --- */
+.top-bar { height: 70px; background-color: var(--bg-panel); display: flex; align-items: center; justify-content: flex-end; padding: 0 30px; border-bottom: 1px solid #000; gap: 20px; }
+.balance-display { background: var(--bg-base); padding: 8px 20px; border-radius: 5px; font-weight: bold; font-size: 1.2rem; display: flex; align-items: center; gap: 10px; border: 1px solid var(--bg-hover); }
+.balance-display span { color: var(--gold); }
+.btn-deposit { background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+.btn-deposit:hover { background: var(--accent-hover); }
+
+/* --- GAME STAGE --- */
+.game-stage { flex: 1; padding: 30px; overflow-y: auto; display: flex; justify-content: center; align-items: center; }
+.game-view { width: 100%; max-width: 900px; background: var(--bg-panel); border-radius: 15px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+.game-header { text-align: center; margin-bottom: 30px; }
+.game-header h2 { color: var(--accent); font-size: 2rem; }
+
+/* --- CONTROLS --- */
+.control-group { margin-bottom: 20px; }
+.control-group label { display: block; color: var(--text-muted); margin-bottom: 5px; font-size: 0.9rem; }
+.input-dark { width: 100%; background: var(--bg-base); border: 1px solid var(--bg-hover); color: white; padding: 12px; border-radius: 8px; font-size: 1.1rem; }
+.btn-action { width: 100%; background: var(--success); color: white; border: none; padding: 15px; font-size: 1.2rem; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; }
+.btn-action:hover:not(:disabled) { filter: brightness(1.1); }
+.btn-action:disabled { background: var(--bg-hover); color: var(--text-muted); cursor: not-allowed; }
+
+/* --- CRASH SPECIFIC --- */
+#crash-display { height: 300px; background: var(--bg-base); border-radius: 10px; display: flex; justify-content: center; align-items: center; font-size: 5rem; font-weight: 900; color: var(--text-main); margin-bottom: 20px; }
+.crash-crashed { color: var(--danger) !important; }
+.crash-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+/* --- COIN FLIP SPECIFIC --- */
+.coin-container { height: 200px; display: flex; justify-content: center; align-items: center; perspective: 1000px; margin-bottom: 30px; }
+.coin { width: 150px; height: 150px; position: relative; transform-style: preserve-3d; transition: transform 2s cubic-bezier(0.4, 2, 0.2, 0.8); }
+.coin-face { position: absolute; width: 100%; height: 100%; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 3rem; font-weight: bold; backface-visibility: hidden; border: 5px solid var(--gold); }
+.coin-front { background: radial-gradient(circle, #fcd34d, #b45309); color: #451a03; }
+.coin-back { background: radial-gradient(circle, #cbd5e1, #475569); color: #0f172a; transform: rotateY(180deg); }
+.flip-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+.btn-choice { background: var(--bg-hover); border: 2px solid transparent; }
+.btn-choice.selected { border-color: var(--accent); background: rgba(59, 130, 246, 0.2); }
+.streak-display { text-align: center; color: var(--warning); font-weight: bold; font-size: 1.2rem; }
+
+/* --- SLOTS SPECIFIC --- */
+#view-slots { text-align: center; }
+.slots-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; background: #000; padding: 10px; border-radius: 10px; margin-bottom: 20px; }
+.slots-cell { aspect-ratio: 1; background: var(--bg-base); border-radius: 5px; display: flex; justify-content: center; align-items: center; font-size: 3rem; border: 1px solid #333; position: relative; overflow: hidden; }
+.slots-cell.win { background: rgba(255, 215, 0, 0.2); box-shadow: inset 0 0 10px var(--gold); }
+.slots-cell .feature-banner { position: absolute; bottom: 5px; left: 50%; transform: translateX(-50%); font-size: 10px; font-weight: 900; padding: 2px 8px; border-radius: 10px; text-shadow: 1px 1px 0 #000; color: white; white-space: nowrap; }
+.slots-cell .wild-banner { background: #e94560; }
+.slots-cell .scatter-banner { background: #8a2be2; }
+.slots-cell.spinning { animation: slotSpin 0.1s infinite linear; }
+@keyframes slotSpin { 0% { transform: translateY(-10px); filter: blur(2px); } 100% { transform: translateY(10px); filter: blur(2px); } }
+.slots-ui { display: flex; justify-content: space-between; align-items: center; background: var(--bg-base); padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+.slots-btn { background: var(--accent); color: white; border: none; padding: 10px 20px; font-size: 1.1rem; border-radius: 5px; cursor: pointer; }
+.slots-btn:hover { background: var(--accent-hover); }
+
+/* Universal layout adjustment for Theater Mode */
+body.theater-mode .sidebar {
+    display: none !important;
+}
+/* Custom Alert Notification Dialog styles */
+.custom-alert-backdrop {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(0, 0, 0, 0.75);
+    z-index: 9999;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(4px);
+}
+
+.custom-alert-box {
+    background: radial-gradient(circle, var(--bg-panel), var(--bg-base));
+    border: 2px solid var(--accent);
+    padding: 30px;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+    max-width: 400px;
+    width: 90%;
+    animation: alertPopIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes alertPopIn {
+    0% { transform: scale(0.8); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.custom-alert-title {
+    color: var(--gold);
+    font-size: 1.4rem;
+    font-weight: bold;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.custom-alert-message {
+    color: var(--text-main);
+    font-size: 1.05rem;
+    margin-bottom: 20px;
+    line-height: 1.4;
+}
+
+.custom-alert-btn {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 10px 30px;
+    font-size: 1rem;
+    font-weight: bold;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.2s;
+    box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+}
+
+.custom-alert-btn:hover {
+    background: var(--accent-hover);
+    transform: scale(1.03);
+}
+/* Custom Multi-Option Confirmation Overlays */
+.custom-confirm-box {
+    background: radial-gradient(circle, var(--bg-panel), var(--bg-base));
+    border: 2px solid var(--danger); /* Warning Red Accent */
+    padding: 30px;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+    max-width: 450px;
+    width: 90%;
+    animation: alertPopIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.custom-confirm-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.btn-confirm-action {
+    padding: 10px 25px;
+    font-size: 1rem;
+    font-weight: bold;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    transition: 0.2s;
+    color: white;
+}
+
+.btn-confirm-yes {
+    background: var(--danger);
+    box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);
+}
+
+.btn-confirm-yes:hover {
+    filter: brightness(1.2);
+    transform: scale(1.03);
+}
+
+.btn-confirm-no {
+    background: #475569;
+}
+
+.btn-confirm-no:hover {
+    background: #64748b;
+    transform: scale(1.03);
+}
+/* Styling updates for custom dialog adjustments */
+.custom-confirm-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+}
+.btn-confirm-action {
+    padding: 12px 20px;
+    font-size: 0.95rem;
+    font-weight: bold;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    transition: 0.2s;
+    color: white;
+}
+.btn-confirm-yes {
+    background: var(--success);
+    box-shadow: 0 4px 10px rgba(34, 197, 94, 0.3);
+}
+.btn-confirm-no {
+    background: #475569;
+}
+.btn-confirm-action:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.1);
+}

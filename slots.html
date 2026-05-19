@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Slots - Tact's Casino</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Floating Win and Bonus Tracker animations */
+        .floating-win {
+            position: absolute;
+            color: #00ff2a; 
+            font-size: 35px;
+            font-weight: 900;
+            text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000;
+            z-index: 20;
+            pointer-events: none;
+            animation: floatUp 2s ease-out forwards;
+        }
+        @keyframes floatUp {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+            15% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+            100% { opacity: 0; transform: translate(-50%, -120%) scale(1.5); }
+        }
+        
+        .bonus-tracker {
+            display: none;
+            background: linear-gradient(45deg, #8a2be2, #e94560);
+            color: white;
+            padding: 10px 25px;
+            border-radius: 10px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin: 15px auto;
+            width: max-content;
+            box-shadow: 0 0 20px rgba(138, 43, 226, 0.6);
+            border: 2px solid var(--gold);
+            animation: pulse 1s infinite alternate;
+        }
+
+        /* Splash Screen Overlays */
+        .splash-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 1000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .splash-content {
+            background: radial-gradient(circle, var(--bg-panel), var(--bg-base));
+            padding: 50px;
+            border-radius: 20px;
+            border: 3px solid var(--gold);
+            text-align: center;
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            box-shadow: 0 0 50px rgba(255, 215, 0, 0.5);
+            min-width: 400px;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .splash-content h1 { color: var(--gold); font-size: 3.5rem; text-shadow: 0 0 20px rgba(255,215,0,0.8); margin-bottom: 10px; text-transform: uppercase; }
+        .splash-content h2 { color: var(--success); font-size: 4rem; margin-bottom: 15px; text-shadow: 2px 2px 0 #000; }
+        .splash-content p { color: var(--text-main); font-size: 1.5rem; font-weight: bold; }
+        
+        .splash-btn {
+            background: var(--success);
+            color: white; border: none; padding: 15px 40px; font-size: 1.5rem;
+            font-weight: bold; border-radius: 10px; cursor: pointer; margin-top: 25px;
+            transition: 0.2s;
+            box-shadow: 0 5px 15px rgba(34, 197, 94, 0.4);
+        }
+        .splash-btn:hover { transform: scale(1.05); background: #2df574; }
+    </style>
+</head>
+<body>
+    <div class="sidebar" id="sidebar-container"></div>
+    <div class="main-content">
+        <div class="top-bar" id="topbar-container"></div>
+        
+        <div class="game-stage">
+            <div class="game-view active" id="view-slots">
+                <div class="game-header"><h2>Foodie Fortune</h2></div>
+                <div class="slots-ui">
+                    <div>Win: <span id="slots-win" style="color:var(--gold)">0</span></div>
+                    <div>
+                        Bet: <button class="slots-btn" id="slots-btn-down">-</button>
+                        <span id="slots-bet" style="margin: 0 10px; font-weight:bold;">10</span>
+                        <button class="slots-btn" id="slots-btn-up">+</button>
+                    </div>
+                </div>
+                
+                <div class="slots-grid" id="slots-grid"></div>
+                
+                <div class="bonus-tracker" id="bonus-tracker">
+                    🌟 Bonus Total Win: <span id="bonus-total-win">0</span> 🌟
+                </div>
+
+                <div style="text-align: center; margin-bottom: 15px; color: var(--accent);" id="slots-status">Ready to spin!</div>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn-action" style="background: #8a2be2;" id="slots-btn-buy">Buy Bonus (100x)</button>
+                    <button class="btn-action" id="slots-btn-spin">SPIN</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="splash-overlay" class="splash-overlay">
+        <div class="splash-content">
+            <h1 id="splash-title">BIG WIN!</h1>
+            <h2 id="splash-amount">+0.00</h2>
+            <p id="splash-subtext">Awesome!</p>
+            <button class="splash-btn" id="splash-btn" style="display: none;">Collect</button>
+        </div>
+    </div>
+
+    <script src="platform.js"></script>
+    <script>
+        Platform.init('slots');
+
+        const SlotsGame = {
+            bet: 10,
+            isSpinning: false,
+            freeSpins: 0,
+            totalFreeSpinsPlayed: 0,
+            fsMultiplier: 1,
+            bonusTotalWin: 0, 
+            currentSpinWin: 0,
+            grid: [],
+            
+            symbols: {
+                steak:   { emoji: '🥩', weight: 40, payouts: { 3: 2, 4: 5,  5: 10 } },
+                sausage: { emoji: '🌭', weight: 30, payouts: { 3: 3, 4: 8,  5: 15 } },
+                wings:   { emoji: '🍗', weight: 20, payouts: { 3: 5, 4: 15, 5: 25 } },
+                pizza:   { emoji: '🍕', weight: 10, payouts: { 3: 10, 4: 25, 5: 50 } },
+                seafood: { emoji: '🦞', weight: 5,  payouts: { 3: 25, 4: 50, 5: 100 } },
+                wild:    { emoji: '🍔', weight: 3,  payouts: { 3: 25, 4: 50, 5: 100 } },
+                // Scatter probability kept low for realistic bonus frequency
+                scatter: { emoji: '🍱', weight: 2,  payouts: {} } 
+            },
+            
+            paylines: [
+                [[0,0],[1,0],[2,0],[3,0],[4,0]], [[0,1],[1,1],[2,1],[3,1],[4,1]],
+                [[0,2],[1,2],[2,2],[3,2],[4,2]], [[0,0],[1,1],[2,2],[3,1],[4,0]],
+                [[0,2],[1,1],[2,0],[3,1],[4,2]]
+            ],
+
+            DOM: {},
+
+            init() {
+                this.DOM = {
+                    grid: document.getElementById('slots-grid'),
+                    bet: document.getElementById('slots-bet'),
+                    win: document.getElementById('slots-win'),
+                    status: document.getElementById('slots-status'),
+                    btnSpin: document.getElementById('slots-btn-spin'),
+                    btnBuy: document.getElementById('slots-btn-buy'),
+                    btnUp: document.getElementById('slots-btn-up'),
+                    btnDown: document.getElementById('slots-btn-down'),
+                    bonusTracker: document.getElementById('bonus-tracker'), 
+                    bonusTotalWin: document.getElementById('bonus-total-win'),
+                    splashOverlay: document.getElementById('splash-overlay'),
+                    splashTitle: document.getElementById('splash-title'),
+                    splashAmount: document.getElementById('splash-amount'),
+                    splashSubtext: document.getElementById('splash-subtext'),
+                    splashBtn: document.getElementById('splash-btn')
+                };
+
+                for(let row=0; row<3; row++) {
+                    for(let col=0; col<5; col++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'slots-cell';
+                        cell.id = `slot-${col}-${row}`;
+                        this.DOM.grid.appendChild(cell);
+                    }
+                }
+                
+                this.grid = Array(5).fill(0).map(() => Array(3).fill('steak'));
+                this.renderGrid();
+                this.updateUI();
+
+                this.DOM.btnUp.onclick = () => this.changeBet(5);
+                this.DOM.btnDown.onclick = () => this.changeBet(-5);
+                this.DOM.btnSpin.onclick = () => this.spin(false);
+                this.DOM.btnBuy.onclick = () => this.spin(true);
+            },
+
+            getRandom() {
+                const total = Object.values(this.symbols).reduce((sum, sym) => sum + sym.weight, 0);
+                let r = Math.floor(Math.random() * total);
+                for (const [key, sym] of Object.entries(this.symbols)) {
+                    if (r < sym.weight) return key;
+                    r -= sym.weight;
+                }
+                return 'steak';
+            },
+
+            renderGrid() {
+                for(let c=0; c<5; c++) {
+                    for(let r=0; r<3; r++) {
+                        this.renderCell(c, r, this.grid[c][r]);
+                    }
+                }
+            },
+
+            renderCell(col, row, symKey) {
+                const cell = document.getElementById(`slot-${col}-${row}`);
+                let html = `<span class="emoji">${this.symbols[symKey].emoji}</span>`;
+                if (symKey === 'wild') html += `<div class="feature-banner wild-banner">WILD</div>`;
+                else if (symKey === 'scatter') html += `<div class="feature-banner scatter-banner">SCATTER</div>`;
+                cell.innerHTML = html;
+            },
+
+            spawnFloatingWin(col, row, amount) {
+                const cell = document.getElementById(`slot-${col}-${row}`);
+                const winEl = document.createElement('div');
+                winEl.className = 'floating-win';
+                winEl.textContent = `+${amount.toFixed(2)}`;
+                winEl.style.top = '50%'; winEl.style.left = '50%'; winEl.style.transform = 'translate(-50%, -50%)';
+                cell.appendChild(winEl);
+                setTimeout(() => { if (winEl.parentElement) winEl.parentElement.removeChild(winEl); }, 2000);
+            },
+
+            changeBet(amt) {
+                if(this.isSpinning || this.freeSpins > 0) return;
+                
+                if (this.bet % 5 !== 0) {
+                    if (amt > 0) this.bet = Math.ceil(this.bet / 5) * 5; 
+                    else this.bet = Math.floor(this.bet / 5) * 5; 
+                } else {
+                    this.bet += amt;
+                }
+                
+                if(this.bet < 5) this.bet = 5;
+                this.updateUI();
+            },
+
+            updateUI() {
+                this.DOM.bet.innerText = this.bet;
+                this.DOM.btnBuy.innerText = `Buy Bonus (${this.bet * 100})`;
+                if(this.freeSpins > 0) {
+                    this.DOM.btnSpin.innerText = `FREE SPINS (${this.freeSpins})`;
+                    this.DOM.btnSpin.style.background = '#e94560';
+                } else {
+                    this.DOM.btnSpin.innerText = `SPIN`;
+                    this.DOM.btnSpin.style.background = 'var(--success)';
+                }
+            },
+
+            showSplash(title, amount, subtext, autoClose = false) {
+                this.DOM.splashTitle.innerText = title;
+                this.DOM.splashAmount.innerText = `$${amount.toFixed(2)}`;
+                this.DOM.splashSubtext.innerText = subtext;
+                this.DOM.splashOverlay.style.display = 'flex';
+
+                if (autoClose) {
+                    this.DOM.splashBtn.style.display = 'none';
+                    setTimeout(() => {
+                        this.DOM.splashOverlay.style.display = 'none';
+                    }, 2500); 
+                } else {
+                    this.DOM.splashBtn.style.display = 'inline-block';
+                    this.DOM.splashBtn.onclick = () => {
+                        this.DOM.splashOverlay.style.display = 'none';
+                        this.DOM.bonusTracker.style.display = 'none';
+                        this.bonusTotalWin = 0;
+                        this.totalFreeSpinsPlayed = 0;
+                        this.fsMultiplier = 1; // Reset multiplier when feature formally closes
+                        this.DOM.status.innerText = "Ready to spin!";
+                    };
+                }
+            },
+
+            async spin(isBonusBuy = false) {
+                if(this.isSpinning) return;
+                let cost = isBonusBuy ? this.bet * 100 : this.bet;
+                
+                if(this.freeSpins === 0) {
+                    if(Platform.balance < cost) return alert("Insufficient Balance!");
+                    Platform.adjustBalance(-cost);
+                } else {
+                    this.freeSpins--;
+                }
+
+                this.isSpinning = true;
+                this.currentSpinWin = 0;
+                this.DOM.win.innerText = "0";
+                this.DOM.status.innerText = this.freeSpins >= 0 && this.fsMultiplier > 1 ? `Free Spin Multiplier: x${this.fsMultiplier}` : "Spinning...";
+                document.querySelectorAll('.slots-cell').forEach(c => { c.classList.add('spinning'); c.classList.remove('win'); });
+                this.updateUI();
+
+                let targetGrid = Array(5).fill(0).map(() => Array(3).fill(null));
+                for(let c=0; c<5; c++) for(let r=0; r<3; r++) targetGrid[c][r] = this.getRandom();
+                
+                if(isBonusBuy) {
+                    targetGrid[0][1] = 'scatter'; targetGrid[2][0] = 'scatter'; targetGrid[4][2] = 'scatter';
+                }
+
+                // Rapid cycling animation
+                let reelStopped = [false, false, false, false, false];
+                const spinInterval = setInterval(() => {
+                    for(let col = 0; col < 5; col++) {
+                        if (!reelStopped[col]) {
+                            for(let row = 0; row < 3; row++) this.renderCell(col, row, this.getRandom());
+                        }
+                    }
+                }, 60);
+
+                // Stop reels left to right
+                for (let col = 0; col < 5; col++) {
+                    await new Promise(resolve => setTimeout(resolve, 300 + (col * 200)));
+                    reelStopped[col] = true;
+                    for(let row = 0; row < 3; row++) {
+                        let cell = document.getElementById(`slot-${col}-${row}`);
+                        cell.classList.remove('spinning'); 
+                        this.grid[col][row] = targetGrid[col][row]; 
+                        this.renderCell(col, row, targetGrid[col][row]);
+                    }
+                }
+
+                clearInterval(spinInterval);
+                this.evaluate();
+                
+                // Record the final output to global history
+                if (this.freeSpins === 0) {
+                    let totalPaid = this.DOM.bonusTracker.style.display === 'block' ? this.bonusTotalWin : this.currentSpinWin;
+                    if (totalPaid > 0 || this.DOM.bonusTracker.style.display === 'block') {
+                        Platform.recordGame('slots', this.bet, totalPaid);
+                    }
+                }
+
+                this.isSpinning = false;
+                this.updateUI();
+
+                // Advanced Splash Screen and Auto-Spin Logic
+                if (this.freeSpins > 0) {
+                    setTimeout(() => this.spin(), 1500);
+                } else if (this.freeSpins === 0 && this.DOM.bonusTracker.style.display === 'block') {
+                    // FEATURE END: Trigger Manual Collect Screen
+                    this.showSplash(
+                        "FEATURE COMPLETE!", 
+                        this.bonusTotalWin, 
+                        `${this.totalFreeSpinsPlayed} Free Spins Played`, 
+                        false
+                    );
+                } else if (this.freeSpins === 0 && this.currentSpinWin >= (this.bet * 5)) {
+                    // NORMAL SPIN BIG WIN: Trigger Auto-closing Splash Screen
+                    let multiplier = (this.currentSpinWin / this.bet).toFixed(1);
+                    this.showSplash(
+                        "BIG WIN!", 
+                        this.currentSpinWin, 
+                        `${multiplier}x Multiplier!`, 
+                        true
+                    );
+                }
+            },
+
+            evaluate() {
+                let totalWin = 0, scatters = 0;
+                
+                // Check Lines
+                this.paylines.forEach(line => {
+                    let first = null, matchCount = 0;
+                    for (let i=0; i<5; i++) {
+                        let sym = this.grid[line[i][0]][line[i][1]];
+                        if(sym === 'scatter') break;
+                        if(i === 0) { first = sym; matchCount++; }
+                        else if(sym === first || sym === 'wild') matchCount++;
+                        else if(first === 'wild') { first = sym; matchCount++; }
+                        else break;
+                    }
+                    let pSym = first === 'wild' ? 'seafood' : first;
+                    if(matchCount >= 3 && this.symbols[pSym].payouts[matchCount]) {
+                        let lineWin = this.symbols[pSym].payouts[matchCount] * this.bet;
+                        totalWin += lineWin;
+                        line.slice(0, matchCount).forEach(pos => document.getElementById(`slot-${pos[0]}-${pos[1]}`).classList.add('win'));
+
+                        // Floating Win Points
+                        let middleIndex = Math.floor(matchCount / 2);
+                        let mPos = line[middleIndex];
+                        this.spawnFloatingWin(mPos[0], mPos[1], lineWin * this.fsMultiplier);
+                    }
+                });
+
+                // Check Scatters
+                for(let c=0; c<5; c++) for(let r=0; r<3; r++) if(this.grid[c][r] === 'scatter') scatters++;
+                
+                totalWin *= this.fsMultiplier;
+                this.currentSpinWin = totalWin;
+
+                // Retrigger & Tracker Logic
+                if (scatters >= 3) {
+                    if (this.DOM.bonusTracker.style.display === 'block' || this.freeSpins > 0) {
+                        this.DOM.status.innerText = "🎉 +10 FREE SPINS RETRIGGERED! 🎉";
+                        this.freeSpins += 10;
+                        this.totalFreeSpinsPlayed += 10;
+                        this.bonusTotalWin += totalWin; 
+                        this.DOM.bonusTotalWin.innerText = this.bonusTotalWin.toFixed(2);
+                    } else {
+                        this.DOM.status.innerText = "🎉 10 FREE SPINS TRIGGERED! 🎉";
+                        this.freeSpins += 10;
+                        this.totalFreeSpinsPlayed = 10;
+                        this.fsMultiplier = 3;
+                        this.bonusTotalWin = totalWin; 
+                        this.DOM.bonusTracker.style.display = 'block';
+                        this.DOM.bonusTotalWin.innerText = this.bonusTotalWin.toFixed(2);
+                    }
+                } else if (this.freeSpins > 0) {
+                    this.bonusTotalWin += totalWin;
+                    this.DOM.bonusTotalWin.innerText = this.bonusTotalWin.toFixed(2);
+                }
+
+                if(totalWin > 0) {
+                    Platform.adjustBalance(totalWin);
+                    this.DOM.win.innerText = totalWin.toFixed(2);
+                    if (scatters < 3) this.DOM.status.innerText = `You won ${totalWin.toFixed(2)} coins!`;
+                } else if (scatters < 3 && this.freeSpins === 0) {
+                    this.DOM.status.innerText = "Try again!";
+                }
+            }
+        };
+
+        SlotsGame.init();
+    </script>
+</body>
+</html>

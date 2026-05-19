@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Management Suite - Tact's Casino</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .admin-layout-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
+        .manager-card { background: var(--bg-panel); border: 1px solid var(--bg-hover); border-radius: 12px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
+        .manager-card h3 { color: var(--warning); margin-bottom: 20px; font-size: 1.4rem; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--bg-hover); padding-bottom: 10px; }
+        
+        .user-list-row { display: flex; align-items: center; justify-content: space-between; background: var(--bg-base); padding: 15px 20px; border-radius: 8px; margin-bottom: 10px; border: 1px solid transparent; transition: 0.2s; }
+        .user-list-row:hover { border-color: #475569; }
+        .user-meta-info { flex: 1; }
+        .user-meta-name { font-size: 1.1rem; font-weight: bold; color: var(--text-main); margin-bottom: 3px; }
+        .user-meta-details { font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; }
+        
+        .management-actions { display: flex; gap: 10px; align-items: center; }
+        .input-admin-inline { width: 120px; background: var(--bg-panel); border: 1px solid var(--bg-hover); color: white; padding: 8px 12px; border-radius: 6px; font-weight: bold; }
+        .btn-admin-action { padding: 8px 15px; font-size: 0.9rem; font-weight: bold; border-radius: 6px; border: none; cursor: pointer; transition: 0.1s; color: white; }
+        .btn-save { background: var(--success); }
+        .btn-edit-stats { background: var(--accent); }
+        .btn-clear-stats { background: var(--warning); color: #000; }
+        .btn-delete-account { background: var(--danger); }
+        
+        /* Modal Popup Backdrop for Editing Leaderboard Stats */
+        .modal-overlay { display: none; position: fixed; top:0; left:0; width:100vw; height:100vh; background: rgba(0,0,0,0.8); z-index: 2000; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
+        .modal-content { background: var(--bg-panel); border: 2px solid var(--warning); border-radius: 12px; padding: 30px; width: 100%; max-width: 500px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .modal-content h4 { color: var(--gold); font-size: 1.3rem; margin-bottom: 15px; text-transform: uppercase; }
+        .stat-field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+    </style>
+</head>
+<body>
+    <div class="sidebar" id="sidebar-container"></div>
+    <div class="main-content">
+        <div class="top-bar" id="topbar-container"></div>
+        <div class="game-stage">
+            <div class="game-view active" style="max-width: 1150px;">
+                <div class="game-header"><h2>🛠️ Master Control Panel</h2></div>
+                
+                <div class="admin-layout-grid">
+                    <div class="manager-card">
+                        <h3>👤 User Account Databases & Financial Balances</h3>
+                        <div id="user-accounts-target-list">
+                            </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="stats-modal-overlay">
+        <div class="modal-content">
+            <h4 id="modal-user-header">Edit Tracker Values</h4>
+            <div class="stat-field-grid">
+                <div>
+                    <label style="font-size:0.8rem; color:var(--text-muted);">Total Won</label>
+                    <input type="number" id="mod-stat-totalWon" class="input-dark" style="padding:8px;">
+                </div>
+                <div>
+                    <label style="font-size:0.8rem; color:var(--text-muted);">Sugar Rush Profit</label>
+                    <input type="number" id="mod-stat-sugar" class="input-dark" style="padding:8px;">
+                </div>
+                <div>
+                    <label style="font-size:0.8rem; color:var(--text-muted);">Crash Profit</label>
+                    <input type="number" id="mod-stat-crash" class="input-dark" style="padding:8px;">
+                </div>
+                <div>
+                    <label style="font-size:0.8rem; color:var(--text-muted);">Foodie Slots Profit</label>
+                    <input type="number" id="mod-stat-slots" class="input-dark" style="padding:8px;">
+                </div>
+                <div>
+                    <label style="font-size:0.8rem; color:var(--text-muted);">Plinko Profit</label>
+                    <input type="number" id="mod-stat-plinko" class="input-dark" style="padding:8px;">
+                </div>
+                <div>
+                    <label style="font-size:0.8rem; color:var(--text-muted);">HiLo Profit</label>
+                    <input type="number" id="mod-stat-hilo" class="input-dark" style="padding:8px;">
+                </div>
+            </div>
+            <div style="display:flex; gap:10px; justify-content:flex-end;">
+                <button class="btn-admin-action" style="background:#555;" onclick="AdminPanel.closeModal()">Cancel</button>
+                <button class="btn-admin-action btn-save" onclick="AdminPanel.saveStatsModal()">Save Leaderboards</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="platform.js"></script>
+    <script>
+        // Security Gate: Bounce non-admin requests completely out of page contexts
+        if (localStorage.getItem('tacts_currentUser') !== 'TactAdmin') {
+            window.location.href = 'index.html';
+        }
+
+        Platform.init('admin');
+
+        const AdminPanel = {
+            loadedAccounts: {},
+            activeTargetUser: null,
+            DOM: {},
+
+            init() {
+                this.DOM.listContainer = document.getElementById('user-accounts-target-list');
+                this.DOM.modal = document.getElementById('stats-modal-overlay');
+                this.loadAndRenderAccounts();
+            },
+
+            loadAndRenderAccounts() {
+                this.DOM.listContainer.innerHTML = '';
+                this.loadedAccounts = {};
+
+                // Loop through and look up registered profile database elements
+                for (let i = 0; i < localStorage.length; i++) {
+                    let key = localStorage.key(i);
+                    if (key.startsWith('tacts_user_')) {
+                        let username = key.replace('tacts_user_', '');
+                        let data = JSON.parse(localStorage.getItem(key));
+                        this.loadedAccounts[username] = data;
+
+                        // Create row items
+                        const row = document.createElement('div');
+                        row.className = 'user-list-row';
+                        
+                        let totalWonVal = data.stats ? (data.stats.totalWon || 0) : 0;
+                        let sugarVal = data.stats ? (data.stats.sugar || 0) : 0;
+                        let crashVal = data.stats ? (data.stats.crash || 0) : 0;
+                        let slotsVal = data.stats ? (data.stats.slots || 0) : 0;
+                        let plinkoVal = data.stats ? (data.stats.plinko || 0) : 0;
+
+                        // Safeguard constraint: Prevent power admin from purging themselves accidentally
+                        const deleteBtnHTML = username !== 'TactAdmin' 
+                            ? `<button class="btn-admin-action btn-delete-account" onclick="AdminPanel.deleteUserAccount('${username}')">Delete User</button>`
+                            : `<button class="btn-admin-action" style="background:#555; cursor:not-allowed;" disabled>System Key</button>`;
+
+                        row.innerHTML = `
+                            <div class="user-meta-info">
+                                <div class="user-meta-name">${username} ${username === 'TactAdmin' ? '<span style="color:var(--warning); font-size:0.8rem;">(Power Admin)</span>' : ''}</div>
+                                <div class="user-meta-details">
+                                    Total Profit Tracker: <strong>$${totalWonVal.toFixed(2)}</strong> | 
+                                    Sugar: $${sugarVal.toFixed(2)} | Slots: $${slotsVal.toFixed(2)} | Crash: $${crashVal.toFixed(2)} | Plinko: $${plinkoVal.toFixed(2)}
+                                </div>
+                            </div>
+                            <div class="management-actions">
+                                <span style="font-size:0.9rem; color:var(--text-muted)">Coins:</span>
+                                <input type="number" class="input-admin-inline" id="coins-input-${username}" value="${data.balance}">
+                                <button class="btn-admin-action btn-save" onclick="AdminPanel.saveUserCoins('${username}')">Save Wallet</button>
+                                <button class="btn-admin-action btn-edit-stats" onclick="AdminPanel.openStatsModal('${username}')">Edit Stats</button>
+                                <button class="btn-admin-action btn-clear-stats" onclick="AdminPanel.clearUserStats('${username}')">Reset Stats</button>
+                                ${deleteBtnHTML}
+                            </div>
+                        `;
+                        this.DOM.listContainer.appendChild(row);
+                    }
+                }
+            },
+
+            saveUserCoins(username) {
+                const targetInput = document.getElementById(`coins-input-${username}`);
+                const nextVal = parseFloat(targetInput.value);
+
+                if (isNaN(nextVal) || nextVal < 0) {
+                    Platform.showAlert("Please specify a real, logical coin count.", "Input Error");
+                    return;
+                }
+
+                this.loadedAccounts[username].balance = nextVal;
+                localStorage.setItem('tacts_user_' + username, JSON.stringify(this.loadedAccounts[username]));
+                
+                // If modifying your own admin wallet, force layouts to sync instantly
+                if (username === Platform.currentUser) {
+                    Platform.loadUserData();
+                    Platform.updateDisplay();
+                }
+
+                Platform.showAlert(`Successfully updated wallet balance parameters for ${username}!`, "Success");
+                this.loadAndRenderAccounts();
+            },
+
+            clearUserStats(username) {
+                Platform.showConfirm(
+                    `Are you certain you wish to wipe out competitive tracking scores for ${username}? This sets leaderboard performance back to $0.00.`,
+                    () => {
+                        if (this.loadedAccounts[username].stats) {
+                            this.loadedAccounts[username].stats = { totalWon: 0, slots: 0, sugar: 0, crash: 0, coinflip: 0, mines: 0, plinko: 0 };
+                        }
+                        localStorage.setItem('tacts_user_' + username, JSON.stringify(this.loadedAccounts[username]));
+                        
+                        Platform.showAlert(`Purged scores and resetting records values for ${username}`, "Database Wiped");
+                        this.loadAndRenderAccounts();
+                    },
+                    "Confirm Data Purge"
+                );
+            },
+
+            deleteUserAccount(username) {
+                if (username === 'TactAdmin') return; 
+
+                Platform.showConfirm(
+                    `WARNING: Are you absolutely certain you wish to completely DELETE the account "${username}"? All game records, stats, and coins will be permanently destroyed.`,
+                    () => {
+                        localStorage.removeItem('tacts_user_' + username);
+                        Platform.showAlert(`Successfully deleted account directory and balance logs for ${username}.`, "Account Deleted");
+                        this.loadAndRenderAccounts(); 
+                    },
+                    "CRITICAL: Delete User Account"
+                );
+            },
+
+            openStatsModal(username) {
+                this.activeTargetUser = username;
+                const stats = this.loadedAccounts[username].stats || { totalWon: 0, slots: 0, sugar: 0, crash: 0, plinko: 0 };
+
+                document.getElementById('modal-user-header').innerText = `Editing: ${username}`;
+                document.getElementById('mod-stat-totalWon').value = stats.totalWon || 0;
+                document.getElementById('mod-stat-sugar').value = stats.sugar || 0;
+                document.getElementById('mod-stat-crash').value = stats.crash || 0;
+                document.getElementById('mod-stat-slots').value = stats.slots || 0;
+                document.getElementById('mod-stat-plinko').value = stats.plinko || 0;
+		document.getElementById('mod-stat-hilo').value = stats.hilo || 0;
+
+
+                this.DOM.modal.style.display = 'flex';
+            },
+
+            closeModal() {
+                this.DOM.modal.style.display = 'none';
+                this.activeTargetUser = null;
+            },
+
+            saveStatsModal() {
+                const username = this.activeTargetUser;
+                if(!username) return;
+
+                if(!this.loadedAccounts[username].stats) {
+                    this.loadedAccounts[username].stats = { totalWon: 0, slots: 0, sugar: 0, crash: 0, coinflip: 0, mines: 0, plinko: 0 };
+                }
+
+                const stats = this.loadedAccounts[username].stats;
+                stats.totalWon = parseFloat(document.getElementById('mod-stat-totalWon').value) || 0;
+                stats.sugar = parseFloat(document.getElementById('mod-stat-sugar').value) || 0;
+                stats.crash = parseFloat(document.getElementById('mod-stat-crash').value) || 0;
+                stats.slots = parseFloat(document.getElementById('mod-stat-slots').value) || 0;
+                stats.plinko = parseFloat(document.getElementById('mod-stat-plinko').value) || 0;
+		stats.hilo = parseFloat(document.getElementById('mod-stat-hilo').value) || 0;
+
+                localStorage.setItem('tacts_user_' + username, JSON.stringify(this.loadedAccounts[username]));
+                
+                this.closeModal();
+                this.loadAndRenderAccounts();
+            }
+        };
+
+        AdminPanel.init();
+    </script>
+</body>
+</html>

@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Plinko - Tact's Casino</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        #view-plinko { text-align: center; max-width: 750px; margin: 0 auto; }
+        
+        .plinko-layout {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            background: var(--bg-panel);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--bg-hover);
+        }
+
+        .plinko-sidebar {
+            width: 220px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            text-align: left;
+        }
+
+        .plinko-board-container {
+            flex: 1;
+            background: var(--bg-base);
+            border-radius: 8px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        canvas {
+            background: #090d16;
+            border-radius: 6px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+            max-width: 100%;
+        }
+
+        /* Non-intrusive status tracker */
+        .status-bar {
+            background: var(--bg-panel);
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 1.1rem;
+            color: var(--accent);
+            font-weight: bold;
+            border: 1px solid var(--bg-hover);
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar" id="sidebar-container"></div>
+    <div class="main-content">
+        <div class="top-bar" id="topbar-container"></div>
+        <div class="game-stage">
+            <div class="game-view active" id="view-plinko">
+                <div class="game-header"><h2>🔽 Plinko</h2></div>
+                
+                <div class="plinko-layout">
+                    <div class="plinko-sidebar">
+                        <div class="control-group">
+                            <label>Bet Amount</label>
+                            <input type="number" id="plinko-bet" class="input-dark" value="10" min="1">
+                        </div>
+                        
+                        <div class="control-group">
+                            <label>Rows (8 - 16)</label>
+                            <select id="plinko-rows" class="input-dark">
+                                <option value="8">8 Rows</option>
+                                <option value="10">10 Rows</option>
+                                <option value="12" selected>12 Rows</option>
+                                <option value="14">14 Rows</option>
+                                <option value="16">16 Rows</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group">
+                            <label>Risk Level</label>
+                            <select id="plinko-risk" class="input-dark">
+                                <option value="low">Low Risk</option>
+                                <option value="medium" selected>Medium Risk</option>
+                                <option value="high">High Risk</option>
+                            </select>
+                        </div>
+
+                        <button class="btn-action" id="btn-plinko-drop">Drop Ball</button>
+                    </div>
+
+                    <div class="plinko-board-container">
+                        <canvas id="plinko-canvas" width="460" height="420"></canvas>
+                        <div class="status-bar" id="plinko-status">Press Drop Ball to play!</div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script src="platform.js"></script>
+    <script>
+        Platform.init('plinko');
+
+        const PlinkoGame = {
+            canvas: null,
+            ctx: null,
+            rowCount: 12,
+            riskLevel: 'medium',
+            balls: [], 
+            pegs: [],  
+            bins: [],  
+            multipliers: [],
+
+            init() {
+                this.canvas = document.getElementById('plinko-canvas');
+                this.ctx = this.canvas.getContext('2d');
+
+                this.DOM = {
+                    betInput: document.getElementById('plinko-bet'),
+                    rowsSelect: document.getElementById('plinko-rows'),
+                    riskSelect: document.getElementById('plinko-risk'),
+                    dropBtn: document.getElementById('btn-plinko-drop'),
+                    status: document.getElementById('plinko-status')
+                };
+
+                this.setupBoard();
+
+                this.DOM.rowsSelect.onchange = () => this.setupBoard();
+                this.DOM.riskSelect.onchange = () => this.setupBoard();
+                this.DOM.dropBtn.onclick = () => this.dropBall();
+
+                this.animate();
+            },
+
+            getMultipliers(rows, risk) {
+                const configurations = {
+                    8: {
+                        low:    [5.0, 1.0, 0.5, 0.3, 0.2, 0.3, 0.5, 1.0, 5.0],
+                        medium: [13.0, 3.0, 1.3, 0.7, 0.4, 0.7, 1.3, 3.0, 13.0],
+                        high:   [29.0, 4.0, 1.5, 0.3, 0.2, 0.3, 1.5, 4.0, 29.0]
+                    },
+                    12: {
+                        low:    [10.0, 2.0, 1.1, 0.6, 0.4, 0.3, 0.4, 0.6, 1.1, 2.0, 10.0],
+                        medium: [33.0, 11.0, 4.0, 2.0, 1.1, 0.6, 0.5, 0.6, 1.1, 2.0, 4.0, 11.0, 33.0],
+                        high:   [170.0, 35.0, 14.0, 4.0, 2.0, 0.3, 0.2, 0.3, 2.0, 4.0, 14.0, 35.0, 170.0]
+                    },
+                    16: {
+                        low:    [16.0, 6.0, 2.0, 1.4, 1.1, 0.8, 0.5, 0.4, 0.5, 0.8, 1.1, 1.4, 2.0, 6.0, 16.0],
+                        medium: [110.0, 41.0, 10.0, 5.0, 3.0, 1.5, 1.0, 0.5, 0.3, 0.5, 1.0, 1.5, 3.0, 5.0, 10.0, 41.0, 110.0],
+                        high:   [1000.0, 130.0, 26.0, 9.0, 4.0, 2.0, 0.2, 0.2, 0.2, 0.2, 0.2, 2.0, 4.0, 9.0, 26.0, 130.0, 1000.0]
+                    }
+                };
+
+                let selectedRows = [8, 12, 16].reduce((prev, curr) => Math.abs(curr - rows) < Math.abs(prev - rows) ? curr : prev);
+                return configurations[selectedRows][risk];
+            },
+
+            setupBoard() {
+                this.rowCount = parseInt(this.DOM.rowsSelect.value);
+                this.riskLevel = this.DOM.riskSelect.value;
+                this.multipliers = this.getMultipliers(this.rowCount, this.riskLevel);
+
+                this.pegs = [];
+                const startY = 40;
+                const spacingY = (this.canvas.height - 90) / this.rowCount;
+                const spacingX = spacingY * 0.92;
+
+                for (let r = 3; r <= this.rowCount + 3; r++) {
+                    const rowPegsCount = r;
+                    const rowWidth = (rowPegsCount - 1) * spacingX;
+                    const startX = (this.canvas.width / 2) - (rowWidth / 2);
+
+                    for (let p = 0; p < rowPegsCount; p++) {
+                        this.pegs.push({
+                            x: startX + (p * spacingX),
+                            y: startY + ((r - 3) * spacingY),
+                            radius: 3.5
+                        });
+                    }
+                }
+
+                this.bins = [];
+                const lastRowIndex = this.rowCount;
+                const binCount = lastRowIndex + 1;
+                const binSpacing = spacingX;
+                const binsWidth = (binCount) * binSpacing;
+                const startBinX = (this.canvas.width / 2) - (binsWidth / 2) + (binSpacing / 2);
+                const binY = this.canvas.height - 35;
+
+                for (let b = 0; b < binCount; b++) {
+                    this.bins.push({
+                        x: startBinX + (b * binSpacing),
+                        y: binY,
+                        width: binSpacing - 3,
+                        height: 22,
+                        mult: this.multipliers[b] || 1.0
+                    });
+                }
+            },
+
+            dropBall() {
+                const bet = parseFloat(this.DOM.betInput.value);
+                if (isNaN(bet) || bet <= 0 || bet > Platform.balance) {
+                    Platform.showAlert("Invalid Bet or Insufficient Balance!", "Wager Error");
+                    return;
+                }
+
+                Platform.adjustBalance(-bet);
+
+                this.balls.push({
+                    x: (this.canvas.width / 2) + (Math.random() * 2 - 1),
+                    y: 15,
+                    vx: 0,
+                    vy: 1,
+                    radius: 5,
+                    betAmt: bet,
+                    color: '#ff4757'
+                });
+            },
+
+            animate() {
+                requestAnimationFrame(() => PlinkoGame.animate());
+                PlinkoGame.updatePhysics();
+                PlinkoGame.draw();
+            },
+
+            updatePhysics() {
+                const gravity = 0.16;
+                const bounceElasticity = 0.42;
+
+                for (let i = this.balls.length - 1; i >= 0; i--) {
+                    let ball = this.balls[i];
+
+                    ball.vy += gravity;
+                    ball.x += ball.vx;
+                    ball.y += ball.vy;
+
+                    this.pegs.forEach(peg => {
+                        let dx = ball.x - peg.x;
+                        let dy = ball.y - peg.y;
+                        let distance = Math.sqrt(dx * dx + dy * dy);
+
+                        if (distance < ball.radius + peg.radius) {
+                            let normalX = dx / distance;
+                            let normalY = dy / distance;
+
+                            ball.x = peg.x + normalX * (ball.radius + peg.radius);
+                            ball.y = peg.y + normalY * (ball.radius + peg.radius);
+
+                            let dotProduct = ball.vx * normalX + ball.vy * normalY;
+                            ball.vx = (ball.vx - 2 * dotProduct * normalX) * bounceElasticity;
+                            ball.vy = (ball.vy - 2 * dotProduct * normalY) * bounceElasticity;
+
+                            ball.vx += (Math.random() * 0.2 - 0.1);
+                        }
+                    });
+
+                    if (ball.y >= this.canvas.height - 40) {
+                        let closestBin = this.bins[0];
+                        let minDistance = Math.abs(ball.x - closestBin.x);
+
+                        this.bins.forEach(bin => {
+                            let dist = Math.abs(ball.x - bin.x);
+                            if (dist < minDistance) {
+                                minDistance = dist;
+                                closestBin = bin;
+                            }
+                        });
+
+                        const totalWon = ball.betAmt * closestBin.mult;
+                        Platform.adjustBalance(totalWon);
+                        Platform.recordGame('plinko', ball.betAmt, totalWon);
+
+                        // UPDATED: No more Platform.showAlert() loops.
+                        // Non-blocking real-time UI text update instead!
+                        if (closestBin.mult >= 1) {
+                            this.DOM.status.style.color = "var(--success)";
+                            this.DOM.status.innerText = `Landed in ${closestBin.mult}x! Payout: +$${totalWon.toFixed(2)}`;
+                        } else {
+                            this.DOM.status.style.color = "var(--text-muted)";
+                            this.DOM.status.innerText = `Landed in ${closestBin.mult}x. Return: $${totalWon.toFixed(2)}`;
+                        }
+
+                        this.balls.splice(i, 1);
+                    }
+                }
+            },
+
+            draw() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+                this.pegs.forEach(peg => {
+                    this.ctx.beginPath();
+                    this.ctx.arc(peg.x, peg.y, peg.radius, 0, Math.PI * 2);
+                    this.ctx.fillStyle = '#64748b';
+                    this.ctx.fill();
+                    this.ctx.closePath();
+                });
+
+                this.bins.forEach(bin => {
+                    let color = '#22c55e'; 
+                    if (bin.mult > 1.5 && bin.mult <= 5) color = '#eab308'; 
+                    else if (bin.mult > 5) color = '#ef4444'; 
+                    else if (bin.mult < 1) color = '#475569'; 
+
+                    this.ctx.fillStyle = color;
+                    this.ctx.beginPath();
+                    this.ctx.roundRect(bin.x - bin.width/2, bin.y, bin.width, bin.height, 4);
+                    this.ctx.fill();
+                    this.ctx.closePath();
+
+                    this.ctx.fillStyle = bin.mult >= 10 ? '#fff' : '#000';
+                    this.ctx.font = 'bold 10px sans-serif';
+                    this.ctx.textAlign = 'center';
+                    this.ctx.textBaseline = 'middle';
+                    this.ctx.fillText(`${bin.mult}x`, bin.x, bin.y + bin.height/2);
+                });
+
+                this.balls.forEach(ball => {
+                    this.ctx.beginPath();
+                    this.ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+                    this.ctx.fillStyle = ball.color;
+                    this.ctx.shadowBlur = 4;
+                    this.ctx.shadowColor = ball.color;
+                    this.ctx.fill();
+                    this.ctx.closePath();
+                    this.ctx.shadowBlur = 0;
+                });
+            }
+        };
+
+        PlinkoGame.init();
+    </script>
+</body>
+</html>

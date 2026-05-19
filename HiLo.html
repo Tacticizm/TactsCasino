@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>HiLo - Tact's Casino</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        #view-hilo { text-align: center; max-width: 750px; margin: 0 auto; }
+        
+        .hilo-layout {
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+            background: var(--bg-panel);
+            padding: 25px;
+            border-radius: 12px;
+            border: 1px solid var(--bg-hover);
+        }
+
+        .hilo-sidebar {
+            width: 220px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            text-align: left;
+        }
+
+        .hilo-game-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        /* CSS Card Styling */
+        .card-container {
+            display: flex;
+            gap: 20px;
+            margin-top: 10px;
+        }
+
+        .playing-card {
+            width: 140px;
+            height: 200px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.4);
+            color: black;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 15px;
+            font-size: 2rem;
+            font-weight: bold;
+            user-select: none;
+            position: relative;
+            border: 2px solid #cbd5e1;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .playing-card.red { color: #dc2626; }
+        .playing-card.black { color: #0f172a; }
+        
+        .card-suit-center {
+            font-size: 4rem;
+            align-self: center;
+            line-height: 1;
+        }
+        .card-bottom-right {
+            align-self: flex-end;
+            transform: rotate(180deg);
+        }
+
+        .card-back {
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+            border: 3px solid #4338ca;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #4338ca;
+            font-size: 3rem;
+        }
+
+        .hilo-actions-box {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            width: 100%;
+        }
+
+        .btn-hilo-choice {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 12px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            color: white;
+            transition: 0.15s;
+        }
+        .btn-high { background: var(--success); }
+        .btn-low { background: var(--danger); }
+        .btn-hilo-choice span { font-size: 0.85rem; opacity: 0.8; font-weight: normal; margin-top: 2px;}
+        .btn-hilo-choice:hover:not(:disabled) { filter: brightness(1.15); transform: translateY(-1px); }
+        .btn-hilo-choice:disabled { background: var(--bg-hover); color: var(--text-muted); cursor: not-allowed; transform: none; }
+
+        .status-display {
+            background: var(--bg-base);
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            color: var(--accent);
+            font-weight: bold;
+            border: 1px solid var(--bg-hover);
+            width: 100%;
+            min-height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .profit-text {
+            font-size: 1.4rem;
+            color: var(--gold);
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar" id="sidebar-container"></div>
+    <div class="main-content">
+        <div class="top-bar" id="topbar-container"></div>
+        <div class="game-stage">
+            <div class="game-view active" id="view-hilo">
+                <div class="game-header"><h2>📉 HiLo Card Game</h2></div>
+                
+                <div class="hilo-layout">
+                    <div class="hilo-sidebar">
+                        <div class="control-group">
+                            <label>Bet Amount</label>
+                            <input type="number" id="hilo-bet" class="input-dark" value="10" min="1">
+                        </div>
+                        <button class="btn-action" id="btn-hilo-start" style="background: var(--accent);">Start Round</button>
+                        <button class="btn-action" id="btn-hilo-skip" style="background: #475569; display: none;">Skip Card</button>
+                        <button class="btn-action" id="btn-hilo-cashout" style="background: var(--warning); display: none;">Cash Out</button>
+                    </div>
+
+                    <div class="hilo-game-area">
+                        <div class="profit-text" id="hilo-payout-display" style="visibility: hidden;">Current Payout: 1.00x ($0.00)</div>
+                        
+                        <div class="card-container">
+                            <div>
+                                <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 5px;">Current Card</div>
+                                <div class="playing-card black" id="current-card">
+                                    <div>A</div>
+                                    <div class="card-suit-center">♠</div>
+                                    <div class="card-bottom-right">A</div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 5px;">Next Card</div>
+                                <div class="playing-card card-back" id="next-card">❓</div>
+                            </div>
+                        </div>
+
+                        <div class="status-display" id="hilo-status">Place a bet to deal the initial card!</div>
+
+                        <div class="hilo-actions-box">
+                            <button class="btn-hilo-choice btn-high" id="btn-guess-higher" disabled>
+                                Higher or Same
+                                <span id="mult-higher-text">0.00x</span>
+                            </button>
+                            <button class="btn-hilo-choice btn-low" id="btn-guess-lower" disabled>
+                                Lower or Same
+                                <span id="mult-lower-text">0.00x</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script src="platform.js"></script>
+    <script>
+        Platform.init('hilo');
+
+        const HiLoGame = {
+            isPlaying: false,
+            betAmt: 0,
+            currentMultiplier: 1.00,
+            hasGuessedThisRound: false, // NEW: Tracks if skips should apply a multiplier penalty
+            currentCard: null, 
+            
+            suits: [
+                { icon: '♠', color: 'black' },
+                { icon: '♥', color: 'red' },
+                { icon: '♦', color: 'red' },
+                { icon: '♣', color: 'black' }
+            ],
+            cardNames: { 1: 'A', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7', 8: '8', 9: '9', 10: '10', 11: 'J', 12: 'Q', 13: 'K' },
+
+            init() {
+                this.DOM = {
+                    betInput: document.getElementById('hilo-bet'),
+                    startBtn: document.getElementById('btn-hilo-start'),
+                    skipBtn: document.getElementById('btn-hilo-skip'), // NEW Skip DOM
+                    cashoutBtn: document.getElementById('btn-hilo-cashout'),
+                    higherBtn: document.getElementById('btn-guess-higher'),
+                    lowerBtn: document.getElementById('btn-guess-lower'),
+                    highMultText: document.getElementById('mult-higher-text'),
+                    lowMultText: document.getElementById('mult-lower-text'),
+                    status: document.getElementById('hilo-status'),
+                    payoutText: document.getElementById('hilo-payout-display'),
+                    currentCardEl: document.getElementById('current-card'),
+                    nextCardEl: document.getElementById('next-card')
+                };
+
+                this.DOM.startBtn.onclick = () => this.startRound();
+                this.DOM.skipBtn.onclick = () => this.skipCard(); // NEW Skip trigger
+                this.DOM.cashoutBtn.onclick = () => this.cashOut();
+                this.DOM.higherBtn.onclick = () => this.makeGuess('higher');
+                this.DOM.lowerBtn.onclick = () => this.makeGuess('lower');
+
+                this.currentCard = this.generateRandomCard();
+                this.updateCardUI(this.DOM.currentCardEl, this.currentCard);
+            },
+
+            generateRandomCard() {
+                const val = Math.floor(Math.random() * 13) + 1;
+                const suit = this.suits[Math.floor(Math.random() * this.suits.length)];
+                return {
+                    value: val,
+                    suit: suit.icon,
+                    color: suit.color,
+                    name: this.cardNames[val]
+                };
+            },
+
+            updateCardUI(element, card, hidden = false) {
+                if (hidden) {
+                    element.className = "playing-card card-back";
+                    element.innerHTML = "❓";
+                    return;
+                }
+                element.className = `playing-card ${card.color}`;
+                element.innerHTML = `
+                    <div>${card.name}</div>
+                    <div class="card-suit-center">${card.suit}</div>
+                    <div class="card-bottom-right">${card.name}</div>
+                `;
+            },
+
+            calculateMultipliers() {
+                const currentVal = this.currentCard.value;
+                
+                const totalCards = 13;
+                const higherOrEqualCount = (13 - currentVal) + 1; 
+                const lowerOrEqualCount = currentVal;
+
+                const highMult = 0.98 / (higherOrEqualCount / totalCards);
+                const lowMult = 0.98 / (lowerOrEqualCount / totalCards);
+
+                this.DOM.highMultText.innerText = `${highMult.toFixed(2)}x`;
+                this.DOM.lowMultText.innerText = `${lowMult.toFixed(2)}x`;
+            },
+
+            startRound() {
+                const bet = parseFloat(this.DOM.betInput.value);
+                if(isNaN(bet) || bet <= 0 || bet > Platform.balance) {
+                    Platform.showAlert("Invalid Bet Amount or Insufficient Balance!", "Wager Error");
+                    return;
+                }
+
+                Platform.adjustBalance(-bet);
+                this.betAmt = bet;
+                this.currentMultiplier = 1.00;
+                this.hasGuessedThisRound = false; // Reset skip state
+                this.isPlaying = true;
+
+                this.currentCard = this.generateRandomCard();
+                this.updateCardUI(this.DOM.currentCardEl, this.currentCard);
+                this.updateCardUI(this.DOM.nextCardEl, null, true); 
+                this.calculateMultipliers();
+
+                this.DOM.startBtn.style.display = 'none';
+                this.DOM.skipBtn.style.display = 'block'; // Show Skip option
+                this.DOM.cashoutBtn.style.display = 'block';
+                this.DOM.betInput.disabled = true;
+                this.DOM.higherBtn.disabled = false;
+                this.DOM.lowerBtn.disabled = false;
+
+                this.DOM.skipBtn.innerText = "Skip Card (Free)"; // First skip is free!
+
+                this.DOM.payoutText.style.visibility = 'visible';
+                this.DOM.payoutText.innerText = `Current Payout: 1.00x ($${this.betAmt.toFixed(2)})`;
+                this.DOM.status.style.color = "var(--text-main)";
+                this.DOM.status.innerText = "Will the next card drawn be Higher or Lower?";
+            },
+
+            // NEW: Skip Card implementation
+            skipCard() {
+                if (!this.isPlaying) return;
+
+                // Generate a fresh replacement card
+                this.currentCard = this.generateRandomCard();
+                this.updateCardUI(this.DOM.currentCardEl, this.currentCard);
+                this.calculateMultipliers();
+
+                if (this.hasGuessedThisRound) {
+                    // Active run: Apply a 5% house edge penalty to multiplier
+                    this.currentMultiplier *= 0.95;
+                    this.DOM.status.style.color = "var(--warning)";
+                    this.DOM.status.innerText = "Card skipped! Multiplier penalized by 5%.";
+                } else {
+                    // Initial draw: Completely free skip
+                    this.DOM.status.style.color = "var(--accent)";
+                    this.DOM.status.innerText = "Initial card skipped for free!";
+                }
+
+                this.DOM.payoutText.innerText = `Current Payout: ${this.currentMultiplier.toFixed(2)}x ($${(this.betAmt * this.currentMultiplier).toFixed(2)})`;
+            },
+
+            makeGuess(guess) {
+                if (!this.isPlaying) return;
+
+                this.hasGuessedThisRound = true; // Block subsequent free skips
+                this.DOM.skipBtn.innerText = "Skip Card (-5%)"; // Update button readout label
+
+                const nextCard = this.generateRandomCard();
+                this.updateCardUI(this.DOM.nextCardEl, nextCard);
+
+                this.DOM.higherBtn.disabled = true;
+                this.DOM.lowerBtn.disabled = true;
+                this.DOM.skipBtn.disabled = true; // Freeze skip during evaluation frame
+
+                setTimeout(() => {
+                    let isWin = false;
+                    const currentVal = this.currentCard.value;
+                    const nextVal = nextCard.value;
+
+                    if (guess === 'higher' && nextVal >= currentVal) isWin = true;
+                    if (guess === 'lower' && nextVal <= currentVal) isWin = true;
+
+                    if (isWin) {
+                        const higherOrEqualCount = (13 - currentVal) + 1;
+                        const lowerOrEqualCount = currentVal;
+                        const probabilityStep = guess === 'higher' ? (higherOrEqualCount / 13) : (lowerOrEqualCount / 13);
+                        
+                        const calculatedStepMult = (0.98 / probabilityStep);
+                        this.currentMultiplier *= calculatedStepMult;
+
+                        this.currentCard = nextCard;
+                        this.updateCardUI(this.DOM.currentCardEl, this.currentCard);
+                        this.updateCardUI(this.DOM.nextCardEl, null, true);
+
+                        this.DOM.payoutText.innerText = `Current Payout: ${this.currentMultiplier.toFixed(2)}x ($${(this.betAmt * this.currentMultiplier).toFixed(2)})`;
+                        this.DOM.status.style.color = "var(--success)";
+                        this.DOM.status.innerText = `Correct! Card value was ${nextCard.name}. Keep guessing, skip, or cash out!`;
+
+                        this.calculateMultipliers();
+                        this.DOM.higherBtn.disabled = false;
+                        this.DOM.lowerBtn.disabled = false;
+                        this.DOM.skipBtn.disabled = false; // Re-enable skip option
+                    } else {
+                        this.endRound(false);
+                    }
+                }, 600); 
+            },
+
+            cashOut() {
+                if(!this.isPlaying) return;
+                const totalWon = this.betAmt * this.currentMultiplier;
+                Platform.adjustBalance(totalWon);
+                this.endRound(true, totalWon);
+            },
+
+            endRound(success, finalPayout = 0) {
+                this.isPlaying = false;
+
+                this.DOM.startBtn.style.display = 'block';
+                this.DOM.skipBtn.style.display = 'none'; // Hide skip option
+                this.DOM.cashoutBtn.style.display = 'none';
+                this.DOM.betInput.disabled = false;
+                this.DOM.higherBtn.disabled = true;
+                this.DOM.lowerBtn.disabled = true;
+
+                if (success) {
+                    this.DOM.status.style.color = "var(--success)";
+                    this.DOM.status.innerText = `Successfully Cashed Out! Payout: $${finalPayout.toFixed(2)}`;
+                    Platform.recordGame('hilo', this.betAmt, finalPayout);
+                } else {
+                    this.DOM.status.style.color = "var(--danger)";
+                    this.DOM.status.innerText = "Incorrect Guess! You busted and lost your wager.";
+                    this.DOM.payoutText.innerText = "Busted! 0.00x";
+                    Platform.recordGame('hilo', this.betAmt, 0);
+                }
+            }
+        };
+
+        HiLoGame.init();
+    </script>
+</body>
+</html>

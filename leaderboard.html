@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Leaderboard - Tact's Casino</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .leaderboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .lb-card { background: var(--bg-base); padding: 20px; border-radius: 10px; border: 1px solid var(--bg-hover); }
+        .lb-card h3 { color: var(--accent); margin-bottom: 15px; text-align: center; }
+        .lb-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--bg-panel); }
+        .lb-row:last-child { border: none; }
+        .lb-rank { font-weight: bold; width: 30px; color: var(--text-muted); }
+        .lb-user { flex: 1; font-weight: bold; }
+        .lb-score { color: var(--gold); }
+    </style>
+</head>
+<body>
+    <div class="sidebar" id="sidebar-container"></div>
+    <div class="main-content">
+        <div class="top-bar" id="topbar-container"></div>
+        <div class="game-stage">
+            <div class="game-view active" style="max-width: 1000px;">
+                <div class="game-header"><h2>🏆 Global Leaderboards</h2></div>
+                
+                <div class="leaderboard-grid">
+                    <div class="lb-card">
+                        <h3>Total Profit (All Time)</h3>
+                        <div id="lb-total"></div>
+                    </div>
+                    <div class="lb-card">
+                        <h3>Biggest Sugar Rush Wins</h3>
+                        <div id="lb-sugar"></div>
+                    </div>
+                    <div class="lb-card">
+                        <h3>Biggest Crash Wins</h3>
+                        <div id="lb-crash"></div>
+                    </div>
+                    <div class="lb-card">
+                        <h3>Biggest Slots Wins</h3>
+                        <div id="lb-slots"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="platform.js"></script>
+    <script>
+        Platform.init('leaderboard');
+
+        // Extract all users from LocalStorage
+        let users = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            let key = localStorage.key(i);
+            if (key.startsWith('tacts_user_')) {
+                let username = key.replace('tacts_user_', '');
+                let data = JSON.parse(localStorage.getItem(key));
+                users.push({ username, stats: data.stats || {} });
+            }
+        }
+
+        function renderLeaderboard(elementId, statKey) {
+            const container = document.getElementById(elementId);
+            // Sort users descending based on the specific stat
+            let sorted = [...users].sort((a, b) => (b.stats[statKey] || 0) - (a.stats[statKey] || 0));
+            
+            // Only take top 5
+            sorted = sorted.slice(0, 5);
+
+            let html = '';
+            sorted.forEach((u, index) => {
+                let score = u.stats[statKey] || 0;
+                let rankStr = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`;
+                
+                html += `
+                    <div class="lb-row">
+                        <div class="lb-rank">${rankStr}</div>
+                        <div class="lb-user" style="${u.username === Platform.currentUser ? 'color:var(--success)' : ''}">
+                            ${u.username} ${u.username === Platform.currentUser ? '(You)' : ''}
+                        </div>
+                        <div class="lb-score">$${score.toFixed(2)}</div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+	// Extract all users from LocalStorage
+        let users = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            let key = localStorage.key(i);
+            if (key.startsWith('tacts_user_')) {
+                let username = key.replace('tacts_user_', '');
+                
+                // RESTORED: Rule constraint check. Skip admin entirely.
+                if (username === 'TactAdmin') continue;
+
+                let data = JSON.parse(localStorage.getItem(key));
+                users.push({ username, stats: data.stats || {} });
+            }
+        }
+
+        renderLeaderboard('lb-total', 'totalWon');
+        renderLeaderboard('lb-sugar', 'sugar');
+        renderLeaderboard('lb-crash', 'crash');
+        renderLeaderboard('lb-slots', 'slots');
+    </script>
+</body>
+</html>
