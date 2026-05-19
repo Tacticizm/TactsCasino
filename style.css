@@ -57,6 +57,17 @@ body {
     letter-spacing: 2px;
     padding: 8px 20px;
     text-shadow: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.logo-img {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    flex-shrink: 0;
 }
 
 /* Gold divider line under the logo */

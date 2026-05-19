@@ -177,7 +177,7 @@ const Platform = {
 
         // UPDATED: Added inline styling to the logo to act as a clickable button pointing to the lobby
         document.getElementById('sidebar-container').innerHTML = `
-            <div class="logo" style="cursor: pointer; transition: 0.2s;" onclick="window.location.href='index.html'" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">🎲 TACT'S CASINO</div>
+            <div class="logo" style="cursor: pointer; transition: 0.2s;" onclick="window.location.href='index.html'" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'"><img src="logo.png" alt="" class="logo-img"> TACT'S CASINO</div>
             <div class="logo-divider"></div>
 
             <div class="nav-section-label">Games</div>
