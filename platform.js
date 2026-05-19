@@ -120,7 +120,7 @@ const Platform = {
             this.userData = { 
                 balance: 1000, 
                 history: [], 
-                stats: { totalWon: 0, slots: 0, sugar: 0, crash: 0, coinflip: 0, mines: 0 } 
+                stats: { totalWon: 0, slots: 0, sugar: 0, crash: 0, coinflip: 0, mines: 0, plinko: 0, hilo: 0 } 
             };
             this.saveUserData();
         }
@@ -175,8 +175,10 @@ const Platform = {
     renderLayout(activePage) {
         const isAdmin = this.currentUser === 'TactAdmin';
 
+        // UPDATED: Added inline styling to the logo to act as a clickable button pointing to the lobby
         document.getElementById('sidebar-container').innerHTML = `
-            <div class="logo">🎲 TACT'S CASINO</div>
+            <div class="logo" style="cursor: pointer; transition: 0.2s;" onclick="window.location.href='index.html'" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">🎲 TACT'S CASINO</div>
+            
             <div style="padding: 0 20px; margin-bottom: 15px; font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">Games</div>
             <a href="index.html" class="nav-item ${activePage === 'home' ? 'active' : ''}">🏠 Lobby</a>
             <a href="slots.html" class="nav-item ${activePage === 'slots' ? 'active' : ''}">🎰 Foodie Slots</a>
@@ -243,9 +245,9 @@ const Platform = {
 
     generateDummyUsers() {
         if (!localStorage.getItem('tacts_user_HighRoller99')) {
-            localStorage.setItem('tacts_user_HighRoller99', JSON.stringify({ balance: 54000, history: [], stats: { totalWon: 12500, slots: 5000, sugar: 0, crash: 7500 }}));
-            localStorage.setItem('tacts_user_LuckyLucy', JSON.stringify({ balance: 8200, history: [], stats: { totalWon: 4200, sugar: 4000, crash: 0, slots: 0 }}));
-            localStorage.setItem('tacts_user_CryptoKing', JSON.stringify({ balance: 150, history: [], stats: { totalWon: 800, slots: 0, sugar: 0, crash: 0 }}));
+            localStorage.setItem('tacts_user_HighRoller99', JSON.stringify({ balance: 54000, history: [], stats: { totalWon: 12500, slots: 5000, sugar: 0, crash: 7500, plinko: 0, hilo: 0 }}));
+            localStorage.setItem('tacts_user_LuckyLucy', JSON.stringify({ balance: 8200, history: [], stats: { totalWon: 4200, sugar: 4000, crash: 0, slots: 0, plinko: 200, hilo: 0 }}));
+            localStorage.setItem('tacts_user_CryptoKing', JSON.stringify({ balance: 150, history: [], stats: { totalWon: 800, slots: 0, sugar: 0, crash: 0, plinko: 0, hilo: 800 }}));
         }
     }
 };
