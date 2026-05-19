@@ -178,8 +178,9 @@ const Platform = {
         // UPDATED: Added inline styling to the logo to act as a clickable button pointing to the lobby
         document.getElementById('sidebar-container').innerHTML = `
             <div class="logo" style="cursor: pointer; transition: 0.2s;" onclick="window.location.href='index.html'" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">🎲 TACT'S CASINO</div>
-            
-            <div style="padding: 0 20px; margin-bottom: 15px; font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">Games</div>
+            <div class="logo-divider"></div>
+
+            <div class="nav-section-label">Games</div>
             <a href="index.html" class="nav-item ${activePage === 'home' ? 'active' : ''}">🏠 Lobby</a>
             <a href="slots.html" class="nav-item ${activePage === 'slots' ? 'active' : ''}">🎰 Foodie Slots</a>
             <a href="sugar-rush.html" class="nav-item ${activePage === 'sugar' ? 'active' : ''}">🍬 Sugar Rush</a>
@@ -189,7 +190,7 @@ const Platform = {
             <a href="plinko.html" class="nav-item ${activePage === 'plinko' ? 'active' : ''}">🔽 Plinko</a>
             <a href="hilo.html" class="nav-item ${activePage === 'hilo' ? 'active' : ''}">📉 HiLo</a>
             
-            <div style="padding: 20px 20px 5px; font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">Community</div>
+            <div class="nav-section-label" style="margin-top: 20px;">Community</div>
             <a href="leaderboard.html" class="nav-item ${activePage === 'leaderboard' ? 'active' : ''}">🏆 Leaderboard</a>
             <a href="profile.html" class="nav-item ${activePage === 'profile' ? 'active' : ''}">👤 My Profile</a>
             ${isAdmin ? `<a href="admin.html" class="nav-item ${activePage === 'admin' ? 'active' : ''}" style="color: var(--warning);">🛠️ Admin Panel</a>` : ''}
@@ -199,17 +200,22 @@ const Platform = {
             ? 'background: var(--accent); cursor: pointer;' 
             : 'background: var(--bg-hover); color: var(--text-muted); cursor: not-allowed; opacity: 0.5;';
 
+        const avatarLetter = this.currentUser.charAt(0).toUpperCase();
+
         document.getElementById('topbar-container').innerHTML = `
-            <div style="margin-right: auto; color: var(--text-muted); display: flex; align-items: center; gap: 10px;">
-                Playing as: <strong style="color: var(--accent);">${this.currentUser}</strong>
-                ${isAdmin ? '<span style="background: var(--warning); color: #000; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold;">ADMIN</span>' : ''}
+            <div class="user-info">
+                <div class="user-avatar">${avatarLetter}</div>
+                <div class="user-label">
+                    Playing as <strong>${this.currentUser}</strong>
+                    ${isAdmin ? '<span class="admin-badge">ADMIN</span>' : ''}
+                </div>
             </div>
-            <div style="display: flex; gap: 5px; margin-right: 15px;">
-                <button class="btn-mode" id="global-btn-theater" style="background: var(--bg-hover); color: var(--text-muted); border: 1px solid #475569; padding: 4px 10px; font-size: 0.85rem; border-radius: 4px; cursor: pointer; font-weight: bold;">🎬 Theater</button>
-                <button class="btn-mode" id="global-btn-fullscreen" style="background: var(--bg-hover); color: var(--text-muted); border: 1px solid #475569; padding: 4px 10px; font-size: 0.85rem; border-radius: 4px; cursor: pointer; font-weight: bold;">🖥️ Fullscreen</button>
+            <div style="display: flex; gap: 6px;">
+                <button class="btn-mode" id="global-btn-theater">🎬 Theater</button>
+                <button class="btn-mode" id="global-btn-fullscreen">🖥️ Fullscreen</button>
             </div>
             <div class="balance-display">
-                <span>💰</span> <div id="global-balance">${this.userData.balance.toFixed(2)}</div>
+                <span>💰</span><div id="global-balance">${this.userData.balance.toFixed(2)}</div>
             </div>
             <button class="btn-deposit" style="${depositBtnStyles}" ${isAdmin ? 'onclick="Platform.deposit()"' : 'disabled'}>Deposit</button>
             <button class="btn-deposit" style="background: var(--danger);" onclick="Platform.logout()">Logout</button>
