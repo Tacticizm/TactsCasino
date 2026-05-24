@@ -27,8 +27,9 @@ const Platform = {
             this.updateDisplay();
             this.setupSizingControls();
             this.injectCustomAlertHTML();
-            // Reveal the game stage now that data is ready
+            // Reveal the game stage and signal other scripts that Platform is ready
             document.body.classList.add('platform-ready');
+            document.dispatchEvent(new CustomEvent('platform:ready'));
         });
     },
 

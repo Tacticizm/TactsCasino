@@ -1,33 +1,256 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Management Suite - Tact's Casino</title>
+    <title>Admin Panel - Tact's Casino</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        .admin-layout-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
-        .manager-card { background: var(--bg-panel); border: 1px solid var(--bg-hover); border-radius: 12px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
-        .manager-card h3 { color: var(--warning); margin-bottom: 20px; font-size: 1.4rem; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--bg-hover); padding-bottom: 10px; }
-        
-        .user-list-row { display: flex; align-items: center; justify-content: space-between; background: var(--bg-base); padding: 15px 20px; border-radius: 8px; margin-bottom: 10px; border: 1px solid transparent; transition: 0.2s; }
-        .user-list-row:hover { border-color: #475569; }
-        .user-meta-info { flex: 1; }
-        .user-meta-name { font-size: 1.1rem; font-weight: bold; color: var(--text-main); margin-bottom: 3px; }
-        .user-meta-details { font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; }
-        
-        .management-actions { display: flex; gap: 10px; align-items: center; }
-        .input-admin-inline { width: 120px; background: var(--bg-panel); border: 1px solid var(--bg-hover); color: white; padding: 8px 12px; border-radius: 6px; font-weight: bold; }
-        .btn-admin-action { padding: 8px 15px; font-size: 0.9rem; font-weight: bold; border-radius: 6px; border: none; cursor: pointer; transition: 0.1s; color: white; }
-        .btn-save { background: var(--success); }
-        .btn-edit-stats { background: var(--accent); }
-        .btn-clear-stats { background: var(--warning); color: #000; }
-        .btn-delete-account { background: var(--danger); }
-        
-        /* Modal Popup Backdrop for Editing Leaderboard Stats */
-        .modal-overlay { display: none; position: fixed; top:0; left:0; width:100vw; height:100vh; background: rgba(0,0,0,0.8); z-index: 2000; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
-        .modal-content { background: var(--bg-panel); border: 2px solid var(--warning); border-radius: 12px; padding: 30px; width: 100%; max-width: 500px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .modal-content h4 { color: var(--gold); font-size: 1.3rem; margin-bottom: 15px; text-transform: uppercase; }
-        .stat-field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+        .admin-view { max-width: 1100px; }
+
+        /* ── Top bar: search + refresh ── */
+        .admin-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .admin-search {
+            flex: 1;
+            min-width: 200px;
+            background: rgba(0,0,0,0.35);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-main);
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-family: 'Inter', sans-serif;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .admin-search:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59,130,246,0.2); }
+        .admin-search::placeholder { color: #3a4f68; }
+
+        .btn-admin-refresh {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-muted);
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+        .btn-admin-refresh:hover { background: rgba(255,255,255,0.1); color: var(--text-main); }
+
+        .user-count-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        /* ── User rows ── */
+        .user-row {
+            background: linear-gradient(160deg, #0f1e2e, #0a1520);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 12px;
+            padding: 18px 20px;
+            margin-bottom: 10px;
+            transition: border-color 0.2s;
+        }
+        .user-row:hover { border-color: rgba(255,255,255,0.13); }
+
+        .user-row-top {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 14px;
+        }
+
+        .user-avatar-sm {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b5bdb, #1e3a8a);
+            border: 2px solid rgba(59,130,246,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1rem;
+            color: white;
+            flex-shrink: 0;
+            text-transform: uppercase;
+        }
+
+        .user-row-name {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .user-row-stats {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .user-row-stats span { color: #7dd3fc; }
+
+        .admin-badge-small {
+            background: linear-gradient(135deg, #ca8a04, #854d0e);
+            color: #fef3c7;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+        }
+
+        /* ── Action strip ── */
+        .user-row-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .action-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(0,0,0,0.25);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 8px;
+            padding: 6px 10px;
+        }
+
+        .action-group-label {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .input-inline {
+            width: 90px;
+            background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-main);
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 0.88rem;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+        }
+        .input-inline:focus { outline: none; border-color: var(--accent); }
+
+        .btn-a {
+            padding: 7px 13px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.18s;
+            color: white;
+            font-family: 'Inter', sans-serif;
+            white-space: nowrap;
+        }
+        .btn-a:hover { filter: brightness(1.15); transform: translateY(-1px); }
+        .btn-a:disabled { opacity: 0.4; cursor: not-allowed; transform: none; filter: none; }
+
+        .btn-green  { background: linear-gradient(135deg, #22c55e, #16a34a); }
+        .btn-blue   { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+        .btn-yellow { background: linear-gradient(135deg, #eab308, #a16207); color: #000; }
+        .btn-red    { background: linear-gradient(135deg, #ef4444, #b91c1c); }
+        .btn-gray   { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); }
+        .btn-gray:hover { background: rgba(255,255,255,0.12); color: var(--text-main); }
+
+        /* ── Stats modal ── */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-box {
+            background: linear-gradient(145deg, #111e30, #0a1220);
+            border: 1px solid rgba(234,179,8,0.2);
+            border-radius: 16px;
+            padding: 32px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+            animation: alertPopIn 0.25s cubic-bezier(0.175,0.885,0.32,1.275) forwards;
+        }
+
+        .modal-box h4 {
+            font-family: 'Rajdhani', sans-serif;
+            color: var(--gold);
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+
+        .stat-field label {
+            display: block;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 6px;
+        }
+
+        /* ── Empty / loading states ── */
+        .admin-empty {
+            text-align: center;
+            padding: 48px 20px;
+            color: var(--text-muted);
+        }
+
+        .admin-empty .icon { font-size: 3rem; margin-bottom: 12px; }
+        .admin-empty p { font-size: 0.95rem; }
+
+        .admin-loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .section-divider {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .section-divider::after { content: ''; flex: 1; height: 1px; background: rgba(255,255,255,0.07); }
     </style>
 </head>
 <body>
@@ -35,52 +258,64 @@
     <div class="main-content">
         <div class="top-bar" id="topbar-container"></div>
         <div class="game-stage">
-            <div class="game-view active" style="max-width: 1150px;">
-                <div class="game-header"><h2>🛠️ Master Control Panel</h2></div>
-                
-                <div class="admin-layout-grid">
-                    <div class="manager-card">
-                        <h3>👤 User Account Databases & Financial Balances</h3>
-                        <div id="user-accounts-target-list">
-                            </div>
-                    </div>
+            <div class="game-view admin-view">
+                <div class="game-header">
+                    <h2>🛠️ Admin Panel</h2>
                 </div>
+
+                <div class="admin-toolbar">
+                    <input class="admin-search" id="admin-search" type="text" placeholder="🔍  Search by username…" oninput="AdminPanel.filter(this.value)">
+                    <button class="btn-admin-refresh" onclick="AdminPanel.load()">↺ Refresh</button>
+                    <span class="user-count-label" id="user-count">Loading…</span>
+                </div>
+
+                <div class="section-divider">Registered Accounts</div>
+                <div id="user-list"><div class="admin-loading">Loading accounts from Firestore…</div></div>
             </div>
         </div>
     </div>
 
-    <div class="modal-overlay" id="stats-modal-overlay">
-        <div class="modal-content">
-            <h4 id="modal-user-header">Edit Tracker Values</h4>
-            <div class="stat-field-grid">
-                <div>
-                    <label style="font-size:0.8rem; color:var(--text-muted);">Total Won</label>
-                    <input type="number" id="mod-stat-totalWon" class="input-dark" style="padding:8px;">
+    <!-- Stats edit modal -->
+    <div class="modal-overlay" id="stats-modal">
+        <div class="modal-box">
+            <h4 id="modal-title">Edit Stats</h4>
+            <div class="stat-grid">
+                <div class="stat-field">
+                    <label>Total Won</label>
+                    <input type="number" id="s-totalWon" class="input-dark" min="0">
                 </div>
-                <div>
-                    <label style="font-size:0.8rem; color:var(--text-muted);">Sugar Rush Profit</label>
-                    <input type="number" id="mod-stat-sugar" class="input-dark" style="padding:8px;">
+                <div class="stat-field">
+                    <label>Slots Profit</label>
+                    <input type="number" id="s-slots" class="input-dark" min="0">
                 </div>
-                <div>
-                    <label style="font-size:0.8rem; color:var(--text-muted);">Crash Profit</label>
-                    <input type="number" id="mod-stat-crash" class="input-dark" style="padding:8px;">
+                <div class="stat-field">
+                    <label>Sugar Rush Profit</label>
+                    <input type="number" id="s-sugar" class="input-dark" min="0">
                 </div>
-                <div>
-                    <label style="font-size:0.8rem; color:var(--text-muted);">Foodie Slots Profit</label>
-                    <input type="number" id="mod-stat-slots" class="input-dark" style="padding:8px;">
+                <div class="stat-field">
+                    <label>Crash Profit</label>
+                    <input type="number" id="s-crash" class="input-dark" min="0">
                 </div>
-                <div>
-                    <label style="font-size:0.8rem; color:var(--text-muted);">Plinko Profit</label>
-                    <input type="number" id="mod-stat-plinko" class="input-dark" style="padding:8px;">
+                <div class="stat-field">
+                    <label>Coin Flip Profit</label>
+                    <input type="number" id="s-coinflip" class="input-dark" min="0">
                 </div>
-                <div>
-                    <label style="font-size:0.8rem; color:var(--text-muted);">HiLo Profit</label>
-                    <input type="number" id="mod-stat-hilo" class="input-dark" style="padding:8px;">
+                <div class="stat-field">
+                    <label>Mines Profit</label>
+                    <input type="number" id="s-mines" class="input-dark" min="0">
+                </div>
+                <div class="stat-field">
+                    <label>Plinko Profit</label>
+                    <input type="number" id="s-plinko" class="input-dark" min="0">
+                </div>
+                <div class="stat-field">
+                    <label>HiLo Profit</label>
+                    <input type="number" id="s-hilo" class="input-dark" min="0">
                 </div>
             </div>
             <div style="display:flex; gap:10px; justify-content:flex-end;">
-                <button class="btn-admin-action" style="background:#555;" onclick="AdminPanel.closeModal()">Cancel</button>
-                <button class="btn-admin-action btn-save" onclick="AdminPanel.saveStatsModal()">Save Leaderboards</button>
+                <button class="btn-a btn-gray" onclick="AdminPanel.closeModal()">Cancel</button>
+                <button class="btn-a btn-blue" onclick="AdminPanel.saveStats()">Save Stats</button>
             </div>
         </div>
     </div>
@@ -91,170 +326,218 @@
     <script src="firebase-init.js"></script>
     <script src="platform.js"></script>
     <script>
-        // Security Gate: Bounce non-admin requests completely out of page contexts
-        if (localStorage.getItem('tacts_currentUser') !== 'TactAdmin') {
-            window.location.href = 'index.html';
-        }
-
         Platform.init('admin');
 
+        // Wait for Firebase auth to finish before checking admin status
+        document.addEventListener('platform:ready', () => {
+            if (Platform.currentUser.displayName !== 'TactAdmin') {
+                window.location.href = 'index.html';
+                return;
+            }
+            AdminPanel.load();
+        });
+
         const AdminPanel = {
-            loadedAccounts: {},
-            activeTargetUser: null,
-            DOM: {},
+            accounts: [],       // [{ uid, ...data }]
+            filtered: [],
+            activeUid: null,
 
-            init() {
-                this.DOM.listContainer = document.getElementById('user-accounts-target-list');
-                this.DOM.modal = document.getElementById('stats-modal-overlay');
-                this.loadAndRenderAccounts();
-            },
+            async load() {
+                document.getElementById('user-list').innerHTML = '<div class="admin-loading">Loading accounts…</div>';
+                document.getElementById('admin-search').value = '';
 
-            loadAndRenderAccounts() {
-                this.DOM.listContainer.innerHTML = '';
-                this.loadedAccounts = {};
-
-                // Loop through and look up registered profile database elements
-                for (let i = 0; i < localStorage.length; i++) {
-                    let key = localStorage.key(i);
-                    if (key.startsWith('tacts_user_')) {
-                        let username = key.replace('tacts_user_', '');
-                        let data = JSON.parse(localStorage.getItem(key));
-                        this.loadedAccounts[username] = data;
-
-                        // Create row items
-                        const row = document.createElement('div');
-                        row.className = 'user-list-row';
-                        
-                        let totalWonVal = data.stats ? (data.stats.totalWon || 0) : 0;
-                        let sugarVal = data.stats ? (data.stats.sugar || 0) : 0;
-                        let crashVal = data.stats ? (data.stats.crash || 0) : 0;
-                        let slotsVal = data.stats ? (data.stats.slots || 0) : 0;
-                        let plinkoVal = data.stats ? (data.stats.plinko || 0) : 0;
-
-                        // Safeguard constraint: Prevent power admin from purging themselves accidentally
-                        const deleteBtnHTML = username !== 'TactAdmin' 
-                            ? `<button class="btn-admin-action btn-delete-account" onclick="AdminPanel.deleteUserAccount('${username}')">Delete User</button>`
-                            : `<button class="btn-admin-action" style="background:#555; cursor:not-allowed;" disabled>System Key</button>`;
-
-                        row.innerHTML = `
-                            <div class="user-meta-info">
-                                <div class="user-meta-name">${username} ${username === 'TactAdmin' ? '<span style="color:var(--warning); font-size:0.8rem;">(Power Admin)</span>' : ''}</div>
-                                <div class="user-meta-details">
-                                    Total Profit Tracker: <strong>$${totalWonVal.toFixed(2)}</strong> | 
-                                    Sugar: $${sugarVal.toFixed(2)} | Slots: $${slotsVal.toFixed(2)} | Crash: $${crashVal.toFixed(2)} | Plinko: $${plinkoVal.toFixed(2)}
-                                </div>
-                            </div>
-                            <div class="management-actions">
-                                <span style="font-size:0.9rem; color:var(--text-muted)">Coins:</span>
-                                <input type="number" class="input-admin-inline" id="coins-input-${username}" value="${data.balance}">
-                                <button class="btn-admin-action btn-save" onclick="AdminPanel.saveUserCoins('${username}')">Save Wallet</button>
-                                <button class="btn-admin-action btn-edit-stats" onclick="AdminPanel.openStatsModal('${username}')">Edit Stats</button>
-                                <button class="btn-admin-action btn-clear-stats" onclick="AdminPanel.clearUserStats('${username}')">Reset Stats</button>
-                                ${deleteBtnHTML}
-                            </div>
-                        `;
-                        this.DOM.listContainer.appendChild(row);
-                    }
+                try {
+                    const snap = await firebase.firestore().collection('users').orderBy('username').get();
+                    this.accounts = snap.docs.map(doc => ({ uid: doc.id, ...doc.data() }));
+                    this.filtered = [...this.accounts];
+                    this.render();
+                } catch (e) {
+                    document.getElementById('user-list').innerHTML =
+                        `<div class="admin-empty"><div class="icon">⚠️</div><p>Failed to load accounts.<br>Check Firestore is enabled.</p></div>`;
+                    console.error(e);
                 }
             },
 
-            saveUserCoins(username) {
-                const targetInput = document.getElementById(`coins-input-${username}`);
-                const nextVal = parseFloat(targetInput.value);
+            filter(query) {
+                const q = query.toLowerCase().trim();
+                this.filtered = q
+                    ? this.accounts.filter(a => (a.username || '').toLowerCase().includes(q))
+                    : [...this.accounts];
+                this.render();
+            },
 
-                if (isNaN(nextVal) || nextVal < 0) {
-                    Platform.showAlert("Please specify a real, logical coin count.", "Input Error");
+            render() {
+                const list  = document.getElementById('user-list');
+                const count = document.getElementById('user-count');
+                count.innerText = `${this.filtered.length} of ${this.accounts.length} account${this.accounts.length !== 1 ? 's' : ''}`;
+
+                if (this.filtered.length === 0) {
+                    list.innerHTML = `<div class="admin-empty"><div class="icon">👤</div><p>No accounts found.</p></div>`;
                     return;
                 }
 
-                this.loadedAccounts[username].balance = nextVal;
-                localStorage.setItem('tacts_user_' + username, JSON.stringify(this.loadedAccounts[username]));
-                
-                // If modifying your own admin wallet, force layouts to sync instantly
-                if (username === Platform.currentUser) {
-                    Platform.loadUserData();
-                    Platform.updateDisplay();
-                }
+                list.innerHTML = '';
+                this.filtered.forEach(acc => {
+                    const isAdmin   = acc.username === 'TactAdmin';
+                    const initial   = (acc.username || '?').charAt(0).toUpperCase();
+                    const balance   = (acc.balance || 0).toFixed(2);
+                    const totalWon  = ((acc.stats && acc.stats.totalWon) || 0).toFixed(2);
+                    const history   = (acc.history || []).length;
 
-                Platform.showAlert(`Successfully updated wallet balance parameters for ${username}!`, "Success");
-                this.loadAndRenderAccounts();
+                    const row = document.createElement('div');
+                    row.className = 'user-row';
+                    row.innerHTML = `
+                        <div class="user-row-top">
+                            <div class="user-avatar-sm">${initial}</div>
+                            <div style="flex:1;">
+                                <div class="user-row-name">
+                                    ${acc.username || acc.uid}
+                                    ${isAdmin ? '<span class="admin-badge-small">ADMIN</span>' : ''}
+                                </div>
+                                <div class="user-row-stats">
+                                    Balance: <span>$${balance}</span> &nbsp;·&nbsp;
+                                    Total Won: <span>$${totalWon}</span> &nbsp;·&nbsp;
+                                    Games played: <span>${history}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="user-row-actions">
+                            <!-- Set balance -->
+                            <div class="action-group">
+                                <span class="action-group-label">Balance</span>
+                                <input type="number" class="input-inline" id="bal-${acc.uid}" value="${acc.balance || 0}" min="0">
+                                <button class="btn-a btn-green" onclick="AdminPanel.setBalance('${acc.uid}')">Set</button>
+                            </div>
+
+                            <!-- Add / remove quick -->
+                            <div class="action-group">
+                                <span class="action-group-label">Quick</span>
+                                <input type="number" class="input-inline" id="adj-${acc.uid}" value="500" min="1">
+                                <button class="btn-a btn-blue"  onclick="AdminPanel.adjustBalance('${acc.uid}', 1)">+ Add</button>
+                                <button class="btn-a btn-yellow" onclick="AdminPanel.adjustBalance('${acc.uid}', -1)">− Remove</button>
+                            </div>
+
+                            <!-- Stats / reset / delete -->
+                            <button class="btn-a btn-blue"  onclick="AdminPanel.openModal('${acc.uid}')">Edit Stats</button>
+                            <button class="btn-a btn-yellow" onclick="AdminPanel.resetStats('${acc.uid}')">Reset Stats</button>
+                            ${!isAdmin
+                                ? `<button class="btn-a btn-red" onclick="AdminPanel.deleteAccount('${acc.uid}')">Delete</button>`
+                                : `<button class="btn-a btn-gray" disabled>Protected</button>`
+                            }
+                        </div>
+                    `;
+                    list.appendChild(row);
+                });
             },
 
-            clearUserStats(username) {
-                Platform.showConfirm(
-                    `Are you certain you wish to wipe out competitive tracking scores for ${username}? This sets leaderboard performance back to $0.00.`,
-                    () => {
-                        if (this.loadedAccounts[username].stats) {
-                            this.loadedAccounts[username].stats = { totalWon: 0, slots: 0, sugar: 0, crash: 0, coinflip: 0, mines: 0, plinko: 0 };
-                        }
-                        localStorage.setItem('tacts_user_' + username, JSON.stringify(this.loadedAccounts[username]));
-                        
-                        Platform.showAlert(`Purged scores and resetting records values for ${username}`, "Database Wiped");
-                        this.loadAndRenderAccounts();
-                    },
-                    "Confirm Data Purge"
-                );
+            async setBalance(uid) {
+                const val = parseFloat(document.getElementById(`bal-${uid}`).value);
+                if (isNaN(val) || val < 0) return Platform.showAlert('Enter a valid balance.', 'Invalid');
+                await this.update(uid, { balance: val });
+                Platform.showAlert('Balance updated.', 'Done');
+                await this.reload(uid);
+                // Sync own display if editing ourselves
+                if (Platform.currentUser.uid === uid) { Platform.userData.balance = val; Platform.updateDisplay(); }
             },
 
-            deleteUserAccount(username) {
-                if (username === 'TactAdmin') return; 
-
-                Platform.showConfirm(
-                    `WARNING: Are you absolutely certain you wish to completely DELETE the account "${username}"? All game records, stats, and coins will be permanently destroyed.`,
-                    () => {
-                        localStorage.removeItem('tacts_user_' + username);
-                        Platform.showAlert(`Successfully deleted account directory and balance logs for ${username}.`, "Account Deleted");
-                        this.loadAndRenderAccounts(); 
-                    },
-                    "CRITICAL: Delete User Account"
-                );
+            async adjustBalance(uid, dir) {
+                const adj = parseFloat(document.getElementById(`adj-${uid}`).value);
+                if (isNaN(adj) || adj <= 0) return Platform.showAlert('Enter a valid amount.', 'Invalid');
+                const acc = this.accounts.find(a => a.uid === uid);
+                if (!acc) return;
+                const newBal = Math.max(0, (acc.balance || 0) + dir * adj);
+                await this.update(uid, { balance: newBal });
+                await this.reload(uid);
+                if (Platform.currentUser.uid === uid) { Platform.userData.balance = newBal; Platform.updateDisplay(); }
             },
 
-            openStatsModal(username) {
-                this.activeTargetUser = username;
-                const stats = this.loadedAccounts[username].stats || { totalWon: 0, slots: 0, sugar: 0, crash: 0, plinko: 0 };
-
-                document.getElementById('modal-user-header').innerText = `Editing: ${username}`;
-                document.getElementById('mod-stat-totalWon').value = stats.totalWon || 0;
-                document.getElementById('mod-stat-sugar').value = stats.sugar || 0;
-                document.getElementById('mod-stat-crash').value = stats.crash || 0;
-                document.getElementById('mod-stat-slots').value = stats.slots || 0;
-                document.getElementById('mod-stat-plinko').value = stats.plinko || 0;
-		document.getElementById('mod-stat-hilo').value = stats.hilo || 0;
-
-
-                this.DOM.modal.style.display = 'flex';
+            openModal(uid) {
+                const acc = this.accounts.find(a => a.uid === uid);
+                if (!acc) return;
+                this.activeUid = uid;
+                const s = acc.stats || {};
+                document.getElementById('modal-title').innerText = `Edit Stats — ${acc.username}`;
+                document.getElementById('s-totalWon').value = s.totalWon || 0;
+                document.getElementById('s-slots').value    = s.slots    || 0;
+                document.getElementById('s-sugar').value    = s.sugar    || 0;
+                document.getElementById('s-crash').value    = s.crash    || 0;
+                document.getElementById('s-coinflip').value = s.coinflip || 0;
+                document.getElementById('s-mines').value    = s.mines    || 0;
+                document.getElementById('s-plinko').value   = s.plinko   || 0;
+                document.getElementById('s-hilo').value     = s.hilo     || 0;
+                document.getElementById('stats-modal').style.display = 'flex';
             },
 
             closeModal() {
-                this.DOM.modal.style.display = 'none';
-                this.activeTargetUser = null;
+                document.getElementById('stats-modal').style.display = 'none';
+                this.activeUid = null;
             },
 
-            saveStatsModal() {
-                const username = this.activeTargetUser;
-                if(!username) return;
-
-                if(!this.loadedAccounts[username].stats) {
-                    this.loadedAccounts[username].stats = { totalWon: 0, slots: 0, sugar: 0, crash: 0, coinflip: 0, mines: 0, plinko: 0 };
-                }
-
-                const stats = this.loadedAccounts[username].stats;
-                stats.totalWon = parseFloat(document.getElementById('mod-stat-totalWon').value) || 0;
-                stats.sugar = parseFloat(document.getElementById('mod-stat-sugar').value) || 0;
-                stats.crash = parseFloat(document.getElementById('mod-stat-crash').value) || 0;
-                stats.slots = parseFloat(document.getElementById('mod-stat-slots').value) || 0;
-                stats.plinko = parseFloat(document.getElementById('mod-stat-plinko').value) || 0;
-		stats.hilo = parseFloat(document.getElementById('mod-stat-hilo').value) || 0;
-
-                localStorage.setItem('tacts_user_' + username, JSON.stringify(this.loadedAccounts[username]));
-                
+            async saveStats() {
+                const uid = this.activeUid;
+                if (!uid) return;
+                const stats = {
+                    totalWon: parseFloat(document.getElementById('s-totalWon').value) || 0,
+                    slots:    parseFloat(document.getElementById('s-slots').value)    || 0,
+                    sugar:    parseFloat(document.getElementById('s-sugar').value)    || 0,
+                    crash:    parseFloat(document.getElementById('s-crash').value)    || 0,
+                    coinflip: parseFloat(document.getElementById('s-coinflip').value) || 0,
+                    mines:    parseFloat(document.getElementById('s-mines').value)    || 0,
+                    plinko:   parseFloat(document.getElementById('s-plinko').value)   || 0,
+                    hilo:     parseFloat(document.getElementById('s-hilo').value)     || 0,
+                };
+                await this.update(uid, { stats });
                 this.closeModal();
-                this.loadAndRenderAccounts();
+                await this.reload(uid);
+                Platform.showAlert('Stats saved.', 'Done');
+            },
+
+            async resetStats(uid) {
+                const acc = this.accounts.find(a => a.uid === uid);
+                Platform.showConfirm(
+                    `Reset all stats for ${acc ? acc.username : uid} to zero?`,
+                    async () => {
+                        const stats = { totalWon: 0, slots: 0, sugar: 0, crash: 0, coinflip: 0, mines: 0, plinko: 0, hilo: 0 };
+                        await this.update(uid, { stats });
+                        await this.reload(uid);
+                        Platform.showAlert('Stats reset.', 'Done');
+                    },
+                    'Confirm Reset'
+                );
+            },
+
+            async deleteAccount(uid) {
+                const acc = this.accounts.find(a => a.uid === uid);
+                if (!acc || acc.username === 'TactAdmin') return;
+                Platform.showConfirm(
+                    `Permanently delete account "${acc.username}"? This removes all their data. They will not be able to log in again.`,
+                    async () => {
+                        await firebase.firestore().collection('users').doc(uid).delete();
+                        Platform.showAlert(`Account "${acc.username}" deleted.`, 'Deleted');
+                        await this.load();
+                    },
+                    'Confirm Delete'
+                );
+            },
+
+            // Write a partial update to Firestore and sync local cache
+            async update(uid, fields) {
+                await firebase.firestore().collection('users').doc(uid).update(fields);
+            },
+
+            // Re-fetch a single account and update local cache + re-render
+            async reload(uid) {
+                const snap = await firebase.firestore().collection('users').doc(uid).get();
+                if (snap.exists) {
+                    const idx = this.accounts.findIndex(a => a.uid === uid);
+                    if (idx !== -1) this.accounts[idx] = { uid, ...snap.data() };
+                    const fi = this.filtered.findIndex(a => a.uid === uid);
+                    if (fi !== -1) this.filtered[fi] = { uid, ...snap.data() };
+                }
+                this.render();
             }
         };
-
-        AdminPanel.init();
     </script>
 </body>
 </html>
