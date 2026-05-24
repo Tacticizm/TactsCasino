@@ -123,6 +123,31 @@
 
         .form-group input::placeholder { color: #3a4f68; }
 
+        .input-wrap {
+            position: relative;
+        }
+
+        .input-wrap input {
+            padding-right: 44px;
+        }
+
+        .toggle-pw {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            padding: 4px;
+            transition: color 0.2s;
+            line-height: 1;
+        }
+
+        .toggle-pw:hover { color: var(--text-main); }
+
         .btn-submit {
             width: 100%;
             background: linear-gradient(135deg, #22c55e, #16a34a);
@@ -205,11 +230,17 @@
                 </div>
                 <div class="form-group">
                     <label>Password</label>
-                    <input type="password" id="reg-password" placeholder="Choose a password (min 6 chars)" autocomplete="new-password">
+                    <div class="input-wrap">
+                        <input type="password" id="reg-password" placeholder="Choose a password (min 6 chars)" autocomplete="new-password">
+                        <button type="button" class="toggle-pw" onclick="togglePw('reg-password', this)" tabindex="-1">👁️</button>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label>Confirm Password</label>
-                    <input type="password" id="reg-confirm" placeholder="Repeat your password" autocomplete="new-password">
+                    <div class="input-wrap">
+                        <input type="password" id="reg-confirm" placeholder="Repeat your password" autocomplete="new-password">
+                        <button type="button" class="toggle-pw" onclick="togglePw('reg-confirm', this)" tabindex="-1">👁️</button>
+                    </div>
                 </div>
                 <button class="btn-submit" id="btn-register" onclick="doRegister()">Create Account</button>
             </div>
@@ -227,6 +258,13 @@
     <script src="platform.js"></script>
     <script>
         Platform.init('login');
+
+        function togglePw(inputId, btn) {
+            const input = document.getElementById(inputId);
+            const show  = input.type === 'password';
+            input.type  = show ? 'text' : 'password';
+            btn.innerText = show ? '🙈' : '👁️';
+        }
 
         function switchTab(tab) {
             const isLogin = tab === 'login';
