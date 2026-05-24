@@ -242,24 +242,28 @@
 
         const SugarGame = {
             bet: 10,
+            lastSpinCost: 10,  // actual cost of the triggering spin (100x for bonus buy)
             isSpinning: false,
             freeSpins: 0,
-            totalFreeSpinsPlayed: 0, 
+            totalFreeSpinsPlayed: 0,
             currentTumbleWin: 0,
-            bonusTotalWin: 0, 
+            bonusTotalWin: 0,
             grid: [],
-            explosionTracker: [], 
+            explosionTracker: [],
             
             symbols: {
-                gummy:  { emoji: '🐻', weight: 150, basePayout: 1.0 }, 
-                heart:  { emoji: '💖', weight: 200, basePayout: 0.8 },
-                bean:   { emoji: '🍬', weight: 250, basePayout: 0.5 },
-                star:   { emoji: '⭐', weight: 300, basePayout: 0.4 },
-                bear2:  { emoji: '🐨', weight: 350, basePayout: 0.3 },
-                drop:   { emoji: '💧', weight: 400, basePayout: 0.2 },
-                round:  { emoji: '🍭', weight: 450, basePayout: 0.1 }, 
-                scatter:{ emoji: '🚀', weight: 3,  basePayout: 0   }  
+                gummy:  { emoji: '🐻', weight: 150, basePayout: 6.0 },  // premium
+                heart:  { emoji: '💖', weight: 200, basePayout: 4.0 },
+                bean:   { emoji: '🍬', weight: 250, basePayout: 2.5 },
+                star:   { emoji: '⭐', weight: 300, basePayout: 1.8 },
+                bear2:  { emoji: '🐨', weight: 350, basePayout: 1.2 },
+                drop:   { emoji: '💧', weight: 400, basePayout: 0.8 },
+                round:  { emoji: '🍭', weight: 450, basePayout: 0.5 },  // low
+                scatter:{ emoji: '🚀', weight: 3,   basePayout: 0   }
             },
+
+            // Exponential size multiplier — bigger clusters = disproportionately bigger wins
+            sizeMultTable: { 5:1, 6:2, 7:3.5, 8:5, 9:8, 10:12, 11:18, 12:25, 13:35, 14:48, 15:65 },
 
             DOM: {},
 
@@ -386,8 +390,9 @@
                 
                 let cost = isBonusBuy ? this.bet * 100 : this.bet;
                 if(this.freeSpins === 0) {
-                    if(Platform.balance < cost) return alert("Insufficient Balance!");
+                    if(Platform.balance < cost) return Platform.showAlert("Insufficient Balance!", "Wager Error");
                     Platform.adjustBalance(-cost);
+                    this.lastSpinCost = cost;
                     this.explosionTracker = Array(7).fill(0).map(() => Array(7).fill(0));
                 } else {
                     this.freeSpins--;
@@ -440,7 +445,7 @@
                     let emoji = this.symbols[symKey].emoji;
                     let size = cluster.length;
                     
-                    let sizeMult = Math.min(10, size - 4); 
+                    let sizeMult = this.sizeMultTable[Math.min(size, 15)] || 65;
                     let clusterBaseWin = this.symbols[symKey].basePayout * sizeMult * this.bet;
                     let totalSpotMult = 0;
 
@@ -578,10 +583,9 @@
                 }
                 
                 if (this.freeSpins === 0) {
-                    let totalPaid = this.DOM.bonusTracker.style.display === 'block' ? this.bonusTotalWin : this.currentTumbleWin;
-                    if (totalPaid > 0 || !this.DOM.bonusTracker.style.display === 'block') {
-                        Platform.recordGame('sugar', this.bet, totalPaid);
-                    }
+                    const inBonus   = this.DOM.bonusTracker.style.display === 'block';
+                    const totalPaid = inBonus ? this.bonusTotalWin : this.currentTumbleWin;
+                    Platform.recordGame('sugar', this.lastSpinCost, totalPaid);
                 }
 
                 this.isSpinning = false;
