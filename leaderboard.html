@@ -1,47 +1,173 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Leaderboard - Tact's Casino</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        .leaderboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .lb-card { background: var(--bg-base); padding: 20px; border-radius: 10px; border: 1px solid var(--bg-hover); }
-        .lb-card h3 { color: var(--accent); margin-bottom: 15px; text-align: center; }
-        .lb-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--bg-panel); }
-        .lb-row:last-child { border: none; }
-        .lb-rank { font-weight: bold; width: 30px; color: var(--text-muted); }
-        .lb-user { flex: 1; font-weight: bold; }
-        .lb-score { color: var(--gold); }
+        .leaderboard-wrap {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
+        }
+
+        .lb-header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn-refresh {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-muted);
+            padding: 9px 18px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+        .btn-refresh:hover { background: rgba(255,255,255,0.1); color: var(--text-main); }
+        .btn-refresh:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-refresh.spinning .refresh-icon { display: inline-block; animation: spin 0.7s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .refresh-icon { display: inline-block; }
+
+        .leaderboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        @media (max-width: 600px) {
+            .leaderboard-grid { grid-template-columns: 1fr; }
+        }
+
+        .lb-card {
+            background: linear-gradient(160deg, #0f1e2e, #0a1520);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 14px;
+            padding: 20px 22px;
+        }
+
+        .lb-card h3 {
+            font-family: 'Rajdhani', sans-serif;
+            color: var(--gold);
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 14px;
+            text-align: center;
+            letter-spacing: 0.5px;
+        }
+
+        .lb-row {
+            display: flex;
+            align-items: center;
+            padding: 9px 4px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            gap: 10px;
+        }
+        .lb-row:last-child { border-bottom: none; }
+        .lb-row:hover { background: rgba(255,255,255,0.02); border-radius: 6px; }
+
+        .lb-rank {
+            font-weight: 700;
+            width: 28px;
+            text-align: center;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+
+        .lb-user {
+            flex: 1;
+            font-weight: 600;
+            font-size: 0.92rem;
+            color: var(--text-main);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .lb-user.is-you { color: var(--success); }
+
+        .lb-score {
+            color: var(--gold);
+            font-weight: 700;
+            font-size: 0.92rem;
+            font-family: 'Rajdhani', sans-serif;
+            flex-shrink: 0;
+        }
+
+        .lb-empty {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .lb-loading {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
     </style>
 </head>
 <body>
     <div class="sidebar" id="sidebar-container"></div>
     <div class="main-content">
         <div class="top-bar" id="topbar-container"></div>
-        <div class="game-stage">
-            <div class="game-view active" style="max-width: 1000px;">
-                <div class="game-header"><h2>🏆 Global Leaderboards</h2></div>
-                
+        <div class="game-stage" style="align-items:flex-start; overflow-y:auto;">
+
+            <div class="leaderboard-wrap">
+                <div class="lb-header-row">
+                    <h2 style="font-family:'Rajdhani',sans-serif; font-size:1.8rem; font-weight:700; color:var(--accent);">🏆 Global Leaderboards</h2>
+                    <button class="btn-refresh" id="btn-refresh" onclick="LB.load()">
+                        <span class="refresh-icon">↺</span> Refresh
+                    </button>
+                </div>
+
                 <div class="leaderboard-grid">
                     <div class="lb-card">
-                        <h3>Total Profit (All Time)</h3>
-                        <div id="lb-total"></div>
+                        <h3>💰 Total Winnings</h3>
+                        <div id="lb-total"><div class="lb-loading">Loading…</div></div>
                     </div>
                     <div class="lb-card">
-                        <h3>Biggest Sugar Rush Wins</h3>
-                        <div id="lb-sugar"></div>
+                        <h3>🍬 Sugar Rush</h3>
+                        <div id="lb-sugar"><div class="lb-loading">Loading…</div></div>
                     </div>
                     <div class="lb-card">
-                        <h3>Biggest Crash Wins</h3>
-                        <div id="lb-crash"></div>
+                        <h3>🚀 Crash</h3>
+                        <div id="lb-crash"><div class="lb-loading">Loading…</div></div>
                     </div>
                     <div class="lb-card">
-                        <h3>Biggest Slots Wins</h3>
-                        <div id="lb-slots"></div>
+                        <h3>🎰 Slots</h3>
+                        <div id="lb-slots"><div class="lb-loading">Loading…</div></div>
+                    </div>
+                    <div class="lb-card">
+                        <h3>💣 Mines</h3>
+                        <div id="lb-mines"><div class="lb-loading">Loading…</div></div>
+                    </div>
+                    <div class="lb-card">
+                        <h3>🔽 Plinko</h3>
+                        <div id="lb-plinko"><div class="lb-loading">Loading…</div></div>
                     </div>
                 </div>
             </div>
+
         </div>
     </div>
 
@@ -53,62 +179,75 @@
     <script>
         Platform.init('leaderboard');
 
-        // Extract all users from LocalStorage
-        let users = [];
-        for (let i = 0; i < localStorage.length; i++) {
-            let key = localStorage.key(i);
-            if (key.startsWith('tacts_user_')) {
-                let username = key.replace('tacts_user_', '');
-                let data = JSON.parse(localStorage.getItem(key));
-                users.push({ username, stats: data.stats || {} });
-            }
-        }
+        const LB = {
+            async load() {
+                const btn = document.getElementById('btn-refresh');
+                btn.classList.add('spinning');
+                btn.disabled = true;
 
-        function renderLeaderboard(elementId, statKey) {
-            const container = document.getElementById(elementId);
-            // Sort users descending based on the specific stat
-            let sorted = [...users].sort((a, b) => (b.stats[statKey] || 0) - (a.stats[statKey] || 0));
-            
-            // Only take top 5
-            sorted = sorted.slice(0, 5);
+                // Show loading state
+                ['lb-total','lb-sugar','lb-crash','lb-slots','lb-mines','lb-plinko'].forEach(id => {
+                    document.getElementById(id).innerHTML = '<div class="lb-loading">Loading…</div>';
+                });
 
-            let html = '';
-            sorted.forEach((u, index) => {
-                let score = u.stats[statKey] || 0;
-                let rankStr = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`;
-                
-                html += `
-                    <div class="lb-row">
-                        <div class="lb-rank">${rankStr}</div>
-                        <div class="lb-user" style="${u.username === Platform.currentUser ? 'color:var(--success)' : ''}">
-                            ${u.username} ${u.username === Platform.currentUser ? '(You)' : ''}
+                try {
+                    const snap = await firebase.firestore().collection('users').get();
+                    const users = [];
+                    snap.forEach(doc => {
+                        const d = doc.data();
+                        if (d.username === 'TactAdmin') return; // hide admin
+                        users.push({ username: d.username, stats: d.stats || {} });
+                    });
+
+                    this.render('lb-total',  users, 'totalWon');
+                    this.render('lb-sugar',  users, 'sugar');
+                    this.render('lb-crash',  users, 'crash');
+                    this.render('lb-slots',  users, 'slots');
+                    this.render('lb-mines',  users, 'mines');
+                    this.render('lb-plinko', users, 'plinko');
+                } catch (e) {
+                    console.error(e);
+                    ['lb-total','lb-sugar','lb-crash','lb-slots','lb-mines','lb-plinko'].forEach(id => {
+                        document.getElementById(id).innerHTML = '<div class="lb-empty">Failed to load data.</div>';
+                    });
+                } finally {
+                    btn.classList.remove('spinning');
+                    btn.disabled = false;
+                }
+            },
+
+            render(elementId, users, statKey) {
+                const container = document.getElementById(elementId);
+                const myUsername = Platform.currentUser ? Platform.currentUser.displayName : null;
+
+                const sorted = [...users]
+                    .sort((a, b) => (b.stats[statKey] || 0) - (a.stats[statKey] || 0))
+                    .slice(0, 5);
+
+                if (sorted.length === 0 || sorted.every(u => !(u.stats[statKey] > 0))) {
+                    container.innerHTML = '<div class="lb-empty">No data yet — be the first!</div>';
+                    return;
+                }
+
+                const rankIcons = ['🥇', '🥈', '🥉'];
+                container.innerHTML = sorted.map((u, i) => {
+                    const score   = u.stats[statKey] || 0;
+                    const isYou   = u.username === myUsername;
+                    const rank    = rankIcons[i] || `<span style="color:var(--text-muted)">${i + 1}.</span>`;
+                    return `
+                        <div class="lb-row">
+                            <div class="lb-rank">${rank}</div>
+                            <div class="lb-user ${isYou ? 'is-you' : ''}">${u.username}${isYou ? ' <span style="font-size:0.75rem;opacity:0.7">(you)</span>' : ''}</div>
+                            <div class="lb-score">$${score.toFixed(2)}</div>
                         </div>
-                        <div class="lb-score">$${score.toFixed(2)}</div>
-                    </div>
-                `;
-            });
-            container.innerHTML = html;
-        }
-
-	// Extract all users from LocalStorage
-        let users = [];
-        for (let i = 0; i < localStorage.length; i++) {
-            let key = localStorage.key(i);
-            if (key.startsWith('tacts_user_')) {
-                let username = key.replace('tacts_user_', '');
-                
-                // RESTORED: Rule constraint check. Skip admin entirely.
-                if (username === 'TactAdmin') continue;
-
-                let data = JSON.parse(localStorage.getItem(key));
-                users.push({ username, stats: data.stats || {} });
+                    `;
+                }).join('');
             }
-        }
+        };
 
-        renderLeaderboard('lb-total', 'totalWon');
-        renderLeaderboard('lb-sugar', 'sugar');
-        renderLeaderboard('lb-crash', 'crash');
-        renderLeaderboard('lb-slots', 'slots');
+        document.addEventListener('platform:ready', () => {
+            LB.load();
+        });
     </script>
 </body>
 </html>
