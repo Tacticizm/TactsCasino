@@ -338,7 +338,7 @@
                 } else if (e.code === 'auth/weak-password') {
                     setError('Password is too weak — use at least 6 characters.');
                 } else {
-                    setError('Registration failed. Please try again.');
+                    setError(`Error: ${e.code || e.message}`);
                     console.error(e);
                 }
             }
