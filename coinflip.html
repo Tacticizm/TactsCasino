@@ -28,6 +28,18 @@
                     <button class="btn-action btn-choice" id="btn-choice-tails" onclick="CoinFlipGame.selectSide('tails')">Tails</button>
                 </div>
                 <button class="btn-action" id="btn-coinflip-flip" disabled>Select Side to Flip</button>
+                <div class="autospin-bar" style="margin-top: 12px;">
+                    <select id="coinflip-autospin-count">
+                        <option value="10">10 Flips</option>
+                        <option value="25">25 Flips</option>
+                        <option value="50" selected>50 Flips</option>
+                        <option value="100">100 Flips</option>
+                        <option value="500">500 Flips</option>
+                        <option value="1000">1000 Flips</option>
+                    </select>
+                    <button class="btn-autospin" id="coinflip-btn-autospin">⚡ Autoplay</button>
+                    <span class="autospin-counter" id="coinflip-autospin-counter"></span>
+                </div>
             </div>
         </div>
     </div>
@@ -43,10 +55,54 @@
         const CoinFlipGame = {
             isFlipping: false, selectedSide: null, streak: 0, DOM: {},
             currentRotation: 0,
+            autoplay: { active: false, remaining: 0 },
 
             init() {
-                this.DOM = { coin: document.getElementById('coin-element'), betInput: document.getElementById('coinflip-bet'), btnFlip: document.getElementById('btn-coinflip-flip'), btnHeads: document.getElementById('btn-choice-heads'), btnTails: document.getElementById('btn-choice-tails'), streakDisplay: document.getElementById('coinflip-streak-display') };
+                this.DOM = {
+                    coin: document.getElementById('coin-element'),
+                    betInput: document.getElementById('coinflip-bet'),
+                    btnFlip: document.getElementById('btn-coinflip-flip'),
+                    btnHeads: document.getElementById('btn-choice-heads'),
+                    btnTails: document.getElementById('btn-choice-tails'),
+                    streakDisplay: document.getElementById('coinflip-streak-display'),
+                    autospinBtn: document.getElementById('coinflip-btn-autospin'),
+                    autospinCount: document.getElementById('coinflip-autospin-count'),
+                    autospinCounter: document.getElementById('coinflip-autospin-counter')
+                };
                 this.DOM.btnFlip.onclick = () => this.flip();
+                this.DOM.autospinBtn.onclick = () => this.toggleAutoplay();
+            },
+
+            toggleAutoplay() {
+                if (this.autoplay.active) {
+                    this.stopAutoplay();
+                } else {
+                    if (!this.selectedSide) { Platform.showAlert('Please select Heads or Tails first!', 'Autoplay'); return; }
+                    if (this.isFlipping) return;
+                    const count = parseInt(this.DOM.autospinCount.value);
+                    this.autoplay.active = true;
+                    this.autoplay.remaining = count;
+                    this.DOM.autospinBtn.classList.add('active');
+                    this.DOM.autospinBtn.innerText = '■ Stop';
+                    this.nextAutoFlip();
+                }
+            },
+
+            stopAutoplay() {
+                this.autoplay.active = false;
+                this.autoplay.remaining = 0;
+                this.DOM.autospinBtn.classList.remove('active');
+                this.DOM.autospinBtn.innerText = '⚡ Autoplay';
+                this.DOM.autospinCounter.innerText = '';
+            },
+
+            nextAutoFlip() {
+                if (!this.autoplay.active || this.autoplay.remaining <= 0) { this.stopAutoplay(); return; }
+                const bet = parseFloat(this.DOM.betInput.value);
+                if (isNaN(bet) || bet <= 0 || Platform.balance < bet) { this.stopAutoplay(); return; }
+                this.DOM.autospinCounter.innerText = `${this.autoplay.remaining} left`;
+                this.autoplay.remaining--;
+                this.flip();
             },
 
             selectSide(side) {
@@ -86,10 +142,16 @@
 
                     if (this.selectedSide === (isHeads ? 'heads' : 'tails')) {
                         Platform.adjustBalance(bet * 2);
+                        Platform.recordGame('coinflip', bet, bet * 2);
                         this.streak++;
-                    } else this.streak = 0;
+                    } else {
+                        Platform.recordGame('coinflip', bet, 0);
+                        this.streak = 0;
+                    }
 
                     this.DOM.streakDisplay.innerText = `Streak: ${this.streak}`;
+
+                    if (this.autoplay.active) setTimeout(() => this.nextAutoFlip(), 400);
                 }, 2000);
             }
         };

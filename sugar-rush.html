@@ -219,6 +219,18 @@
                     <button class="btn-action" style="background: #8a2be2; padding: 12px;" id="sugar-btn-buy">Buy Bonus (100x)</button>
                     <button class="btn-action" style="background: #ff69b4; padding: 12px;" id="sugar-btn-spin">SPIN</button>
                 </div>
+                <div class="autospin-bar" style="justify-content: center;">
+                    <select id="sugar-autospin-count">
+                        <option value="10">10 Spins</option>
+                        <option value="25">25 Spins</option>
+                        <option value="50" selected>50 Spins</option>
+                        <option value="100">100 Spins</option>
+                        <option value="500">500 Spins</option>
+                        <option value="1000">1000 Spins</option>
+                    </select>
+                    <button class="btn-autospin" id="sugar-btn-autospin">⚡ Autoplay</button>
+                    <span class="autospin-counter" id="sugar-autospin-counter"></span>
+                </div>
             </div>
         </div>
     </div>
@@ -242,7 +254,7 @@
 
         const SugarGame = {
             bet: 10,
-            lastSpinCost: 10,  // actual cost of the triggering spin (100x for bonus buy)
+            lastSpinCost: 10,
             isSpinning: false,
             freeSpins: 0,
             totalFreeSpinsPlayed: 0,
@@ -250,6 +262,7 @@
             bonusTotalWin: 0,
             grid: [],
             explosionTracker: [],
+            autoplay: { active: false, remaining: 0 },
             
             symbols: {
                 gummy:  { emoji: '🐻', weight: 150, basePayout: 6.0 },  // premium
@@ -293,10 +306,45 @@
                 this.renderGrid([]); 
                 this.updateUI();
 
+                this.DOM.autospinBtn     = document.getElementById('sugar-btn-autospin');
+                this.DOM.autospinCount   = document.getElementById('sugar-autospin-count');
+                this.DOM.autospinCounter = document.getElementById('sugar-autospin-counter');
+
                 this.DOM.btnUp.onclick = () => this.changeBet(5);
                 this.DOM.btnDown.onclick = () => this.changeBet(-5);
                 this.DOM.btnSpin.onclick = () => this.spin(false);
                 this.DOM.btnBuy.onclick = () => this.spin(true);
+                this.DOM.autospinBtn.onclick = () => this.toggleAutoplay();
+            },
+
+            toggleAutoplay() {
+                if (this.autoplay.active) {
+                    this.stopAutoplay();
+                } else {
+                    if (this.isSpinning || this.freeSpins > 0) return;
+                    const count = parseInt(this.DOM.autospinCount.value);
+                    this.autoplay.active = true;
+                    this.autoplay.remaining = count;
+                    this.DOM.autospinBtn.classList.add('active');
+                    this.DOM.autospinBtn.innerText = '■ Stop';
+                    this.nextAutoSpin();
+                }
+            },
+
+            stopAutoplay() {
+                this.autoplay.active = false;
+                this.autoplay.remaining = 0;
+                this.DOM.autospinBtn.classList.remove('active');
+                this.DOM.autospinBtn.innerText = '⚡ Autoplay';
+                this.DOM.autospinCounter.innerText = '';
+            },
+
+            nextAutoSpin() {
+                if (!this.autoplay.active || this.autoplay.remaining <= 0) { this.stopAutoplay(); return; }
+                if (Platform.balance < this.bet) { this.stopAutoplay(); this.DOM.status.innerText = 'Autoplay stopped — insufficient balance.'; return; }
+                this.DOM.autospinCounter.innerText = `${this.autoplay.remaining} left`;
+                this.autoplay.remaining--;
+                this.spin(false);
             },
 
             getRandomSymbol(allowScatter = true) {
@@ -591,23 +639,17 @@
                 this.isSpinning = false;
                 this.updateUI();
 
-                if(this.freeSpins > 0) {
+                if (this.freeSpins > 0) {
                     setTimeout(() => this.spin(), 1500);
-                } else if(this.freeSpins === 0 && this.DOM.bonusTracker.style.display === 'block' && scatters < 3) {
-                    this.showSplash(
-                        "FEATURE COMPLETE!", 
-                        this.bonusTotalWin, 
-                        `${this.totalFreeSpinsPlayed} Free Spins Played`, 
-                        false
-                    );
+                } else if (this.freeSpins === 0 && this.DOM.bonusTracker.style.display === 'block' && scatters < 3) {
+                    // Feature complete — pause autoplay until player collects
+                    this.showSplash("FEATURE COMPLETE!", this.bonusTotalWin, `${this.totalFreeSpinsPlayed} Free Spins Played`, false);
                 } else if (this.freeSpins === 0 && this.currentTumbleWin >= (this.bet * 5)) {
                     let multiplier = (this.currentTumbleWin / this.bet).toFixed(1);
-                    this.showSplash(
-                        "BIG WIN!", 
-                        this.currentTumbleWin, 
-                        `${multiplier}x Multiplier!`, 
-                        true
-                    );
+                    this.showSplash("BIG WIN!", this.currentTumbleWin, `${multiplier}x Multiplier!`, true);
+                    if (this.autoplay.active) setTimeout(() => this.nextAutoSpin(), 2600);
+                } else if (this.autoplay.active) {
+                    setTimeout(() => this.nextAutoSpin(), 800);
                 }
             }
         };

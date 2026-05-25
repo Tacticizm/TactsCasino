@@ -94,6 +94,18 @@
                         </div>
 
                         <button class="btn-action" id="btn-plinko-drop">Drop Ball</button>
+                        <div class="autospin-bar" style="margin-top: 6px; flex-direction: column; align-items: stretch; gap: 6px;">
+                            <select id="plinko-autospin-count" class="input-dark" style="width:100%;">
+                                <option value="10">10 Drops</option>
+                                <option value="25">25 Drops</option>
+                                <option value="50" selected>50 Drops</option>
+                                <option value="100">100 Drops</option>
+                                <option value="500">500 Drops</option>
+                                <option value="1000">1000 Drops</option>
+                            </select>
+                            <button class="btn-autospin" id="plinko-btn-autospin" style="width:100%; text-align:center;">⚡ Autoplay</button>
+                            <span class="autospin-counter" id="plinko-autospin-counter" style="text-align:center;"></span>
+                        </div>
                     </div>
 
                     <div class="plinko-board-container">
@@ -119,10 +131,11 @@
             ctx: null,
             rowCount: 12,
             riskLevel: 'medium',
-            balls: [], 
-            pegs: [],  
-            bins: [],  
+            balls: [],
+            pegs: [],
+            bins: [],
             multipliers: [],
+            autoplay: { active: false, remaining: 0, pending: false },
 
             init() {
                 this.canvas = document.getElementById('plinko-canvas');
@@ -133,7 +146,10 @@
                     rowsSelect: document.getElementById('plinko-rows'),
                     riskSelect: document.getElementById('plinko-risk'),
                     dropBtn: document.getElementById('btn-plinko-drop'),
-                    status: document.getElementById('plinko-status')
+                    status: document.getElementById('plinko-status'),
+                    autospinBtn: document.getElementById('plinko-btn-autospin'),
+                    autospinCount: document.getElementById('plinko-autospin-count'),
+                    autospinCounter: document.getElementById('plinko-autospin-counter')
                 };
 
                 this.setupBoard();
@@ -141,8 +157,42 @@
                 this.DOM.rowsSelect.onchange = () => this.setupBoard();
                 this.DOM.riskSelect.onchange = () => this.setupBoard();
                 this.DOM.dropBtn.onclick = () => this.dropBall();
+                this.DOM.autospinBtn.onclick = () => this.toggleAutoplay();
 
                 this.animate();
+            },
+
+            toggleAutoplay() {
+                if (this.autoplay.active) {
+                    this.stopAutoplay();
+                } else {
+                    const count = parseInt(this.DOM.autospinCount.value);
+                    this.autoplay.active = true;
+                    this.autoplay.remaining = count;
+                    this.autoplay.pending = false;
+                    this.DOM.autospinBtn.classList.add('active');
+                    this.DOM.autospinBtn.innerText = '■ Stop';
+                    this.nextAutoDrop();
+                }
+            },
+
+            stopAutoplay() {
+                this.autoplay.active = false;
+                this.autoplay.remaining = 0;
+                this.autoplay.pending = false;
+                this.DOM.autospinBtn.classList.remove('active');
+                this.DOM.autospinBtn.innerText = '⚡ Autoplay';
+                this.DOM.autospinCounter.innerText = '';
+            },
+
+            nextAutoDrop() {
+                if (!this.autoplay.active || this.autoplay.remaining <= 0) { this.stopAutoplay(); return; }
+                const bet = parseFloat(this.DOM.betInput.value);
+                if (isNaN(bet) || bet <= 0 || Platform.balance < bet) { this.stopAutoplay(); return; }
+                this.DOM.autospinCounter.innerText = `${this.autoplay.remaining} left`;
+                this.autoplay.remaining--;
+                this.autoplay.pending = false;
+                this.dropBall();
             },
 
             getMultipliers(rows, risk) {
@@ -293,8 +343,6 @@
                         Platform.adjustBalance(totalWon);
                         Platform.recordGame('plinko', ball.betAmt, totalWon);
 
-                        // UPDATED: No more Platform.showAlert() loops.
-                        // Non-blocking real-time UI text update instead!
                         if (closestBin.mult >= 1) {
                             this.DOM.status.style.color = "var(--success)";
                             this.DOM.status.innerText = `Landed in ${closestBin.mult}x! Payout: +$${totalWon.toFixed(2)}`;
@@ -304,6 +352,12 @@
                         }
 
                         this.balls.splice(i, 1);
+
+                        // Trigger next autoplay drop when all balls have settled
+                        if (this.autoplay.active && !this.autoplay.pending && this.balls.length === 0) {
+                            this.autoplay.pending = true;
+                            setTimeout(() => this.nextAutoDrop(), 600);
+                        }
                     }
                 }
             },

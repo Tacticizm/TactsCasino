@@ -107,6 +107,18 @@
                     <button class="btn-action" style="background: #8a2be2;" id="slots-btn-buy">Buy Bonus (100x)</button>
                     <button class="btn-action" id="slots-btn-spin">SPIN</button>
                 </div>
+                <div class="autospin-bar">
+                    <select id="slots-autospin-count">
+                        <option value="10">10 Spins</option>
+                        <option value="25">25 Spins</option>
+                        <option value="50" selected>50 Spins</option>
+                        <option value="100">100 Spins</option>
+                        <option value="500">500 Spins</option>
+                        <option value="1000">1000 Spins</option>
+                    </select>
+                    <button class="btn-autospin" id="slots-btn-autospin">⚡ Autoplay</button>
+                    <span class="autospin-counter" id="slots-autospin-counter"></span>
+                </div>
             </div>
         </div>
     </div>
@@ -134,9 +146,10 @@
             freeSpins: 0,
             totalFreeSpinsPlayed: 0,
             fsMultiplier: 1,
-            bonusTotalWin: 0, 
+            bonusTotalWin: 0,
             currentSpinWin: 0,
             grid: [],
+            autoplay: { active: false, remaining: 0 },
             
             symbols: {
                 steak:   { emoji: '🥩', weight: 40, payouts: { 3: 2, 4: 5,  5: 10 } },
@@ -189,10 +202,45 @@
                 this.renderGrid();
                 this.updateUI();
 
+                this.DOM.autospinBtn     = document.getElementById('slots-btn-autospin');
+                this.DOM.autospinCount   = document.getElementById('slots-autospin-count');
+                this.DOM.autospinCounter = document.getElementById('slots-autospin-counter');
+
                 this.DOM.btnUp.onclick = () => this.changeBet(5);
                 this.DOM.btnDown.onclick = () => this.changeBet(-5);
                 this.DOM.btnSpin.onclick = () => this.spin(false);
                 this.DOM.btnBuy.onclick = () => this.spin(true);
+                this.DOM.autospinBtn.onclick = () => this.toggleAutoplay();
+            },
+
+            toggleAutoplay() {
+                if (this.autoplay.active) {
+                    this.stopAutoplay();
+                } else {
+                    if (this.isSpinning || this.freeSpins > 0) return;
+                    const count = parseInt(this.DOM.autospinCount.value);
+                    this.autoplay.active = true;
+                    this.autoplay.remaining = count;
+                    this.DOM.autospinBtn.classList.add('active');
+                    this.DOM.autospinBtn.innerText = '■ Stop';
+                    this.nextAutoSpin();
+                }
+            },
+
+            stopAutoplay() {
+                this.autoplay.active = false;
+                this.autoplay.remaining = 0;
+                this.DOM.autospinBtn.classList.remove('active');
+                this.DOM.autospinBtn.innerText = '⚡ Autoplay';
+                this.DOM.autospinCounter.innerText = '';
+            },
+
+            nextAutoSpin() {
+                if (!this.autoplay.active || this.autoplay.remaining <= 0) { this.stopAutoplay(); return; }
+                if (Platform.balance < this.bet) { this.stopAutoplay(); this.DOM.status.innerText = 'Autoplay stopped — insufficient balance.'; return; }
+                this.DOM.autospinCounter.innerText = `${this.autoplay.remaining} left`;
+                this.autoplay.remaining--;
+                this.spin(false);
             },
 
             getRandom() {
@@ -346,22 +394,19 @@
                 if (this.freeSpins > 0) {
                     setTimeout(() => this.spin(), 1500);
                 } else if (this.freeSpins === 0 && this.DOM.bonusTracker.style.display === 'block') {
-                    // FEATURE END: Trigger Manual Collect Screen
+                    // FEATURE END: Trigger Manual Collect Screen (autoplay pauses for collect)
                     this.showSplash(
-                        "FEATURE COMPLETE!", 
-                        this.bonusTotalWin, 
-                        `${this.totalFreeSpinsPlayed} Free Spins Played`, 
+                        "FEATURE COMPLETE!",
+                        this.bonusTotalWin,
+                        `${this.totalFreeSpinsPlayed} Free Spins Played`,
                         false
                     );
                 } else if (this.freeSpins === 0 && this.currentSpinWin >= (this.bet * 5)) {
-                    // NORMAL SPIN BIG WIN: Trigger Auto-closing Splash Screen
                     let multiplier = (this.currentSpinWin / this.bet).toFixed(1);
-                    this.showSplash(
-                        "BIG WIN!", 
-                        this.currentSpinWin, 
-                        `${multiplier}x Multiplier!`, 
-                        true
-                    );
+                    this.showSplash("BIG WIN!", this.currentSpinWin, `${multiplier}x Multiplier!`, true);
+                    if (this.autoplay.active) setTimeout(() => this.nextAutoSpin(), 2600);
+                } else if (this.autoplay.active) {
+                    setTimeout(() => this.nextAutoSpin(), 800);
                 }
             },
 
