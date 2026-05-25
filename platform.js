@@ -1,7 +1,11 @@
 const Platform = {
     currentUser: null,   // Firebase Auth user object
     userData: null,      // Firestore user document data
+    activePage: null,    // current page id, used by bets panel
     confirmCallback: null,
+
+    // Pages that are actual games and should show the bets panel
+    _GAME_PAGES: new Set(['slots', 'sugar', 'crash', 'coinflip', 'mines', 'plinko', 'hilo']),
 
     // Convenience getter so game pages can still use Platform.balance
     get balance() { return this.userData ? this.userData.balance : 0; },
@@ -22,11 +26,13 @@ const Platform = {
             }
 
             this.currentUser = user;
+            this.activePage  = activePage;
             await this.loadUserData();
             this.renderLayout(activePage);
             this.updateDisplay();
             this.setupSizingControls();
             this.injectCustomAlertHTML();
+            this.injectBetsPanel(activePage);
             // Reveal the game stage and signal other scripts that Platform is ready
             document.body.classList.add('platform-ready');
             document.dispatchEvent(new CustomEvent('platform:ready'));
@@ -110,6 +116,69 @@ const Platform = {
             }
         }
         this.saveUserData();
+        this.updateBetsPanel();
+    },
+
+    // ── Recent Bets Panel ──────────────────────────────────────────────────────
+    injectBetsPanel(gameId) {
+        if (!this._GAME_PAGES.has(gameId)) return;
+        const stage = document.querySelector('.game-stage');
+        if (!stage || !stage.parentNode) return;
+
+        // Wrap game-stage + panel in a flex-row container
+        const wrapper = document.createElement('div');
+        wrapper.id = 'content-with-panel';
+        stage.parentNode.insertBefore(wrapper, stage);
+        wrapper.appendChild(stage);
+
+        const panel = document.createElement('div');
+        panel.id = 'recent-bets-panel';
+        panel.innerHTML = `
+            <div class="bets-panel-head">
+                <span class="bets-panel-title">Recent Bets</span>
+                <select id="bets-count-select" class="bets-count-select">
+                    <option value="5">5</option>
+                    <option value="10" selected>10</option>
+                    <option value="15">15</option>
+                    <option value="20">20</option>
+                </select>
+            </div>
+            <div id="bets-list" class="bets-list"></div>
+        `;
+        wrapper.appendChild(panel);
+
+        document.getElementById('bets-count-select').onchange = () => this.updateBetsPanel();
+        this.updateBetsPanel();
+    },
+
+    updateBetsPanel() {
+        const listEl  = document.getElementById('bets-list');
+        const countEl = document.getElementById('bets-count-select');
+        if (!listEl || !countEl || !this.userData) return;
+
+        const count   = parseInt(countEl.value);
+        const gameId  = this.activePage;
+        const entries = (this.userData.history || [])
+            .filter(h => h.game === gameId)
+            .slice(0, count);
+
+        if (entries.length === 0) {
+            listEl.innerHTML = '<div class="bets-empty">No rounds yet.<br>Play a round to see results here.</div>';
+            return;
+        }
+
+        listEl.innerHTML = entries.map(e => {
+            const profit = e.win - e.bet;
+            const isWin  = profit > 0;
+            const label  = isWin
+                ? `+$${profit.toFixed(2)}`
+                : (e.win === 0 ? `−$${e.bet.toFixed(2)}` : `−$${Math.abs(profit).toFixed(2)}`);
+            return `
+                <div class="bet-row ${isWin ? 'bet-row-win' : 'bet-row-loss'}">
+                    <span class="bet-row-bet">$${e.bet.toFixed(2)}</span>
+                    <span class="bet-row-result">${label}</span>
+                </div>`;
+        }).join('');
     },
 
     logout() {
