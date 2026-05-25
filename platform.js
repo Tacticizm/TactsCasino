@@ -53,14 +53,33 @@ const Platform = {
     },
 
     saveUserData() {
-        // Fire-and-forget — no need to await in game logic
-        const uid = this.currentUser.uid;
-        firebase.firestore().collection('users').doc(uid).set(this.userData).catch(console.error);
+        if (!this.userData || !this.currentUser) return;
+        // Final guard — never write a nonsensical balance to Firestore
+        const bal = this.userData.balance;
+        if (typeof bal !== 'number' || !isFinite(bal) || bal < 0 || bal > this._MAX_BALANCE) return;
+        firebase.firestore().collection('users').doc(this.currentUser.uid)
+            .set(this.userData).catch(console.error);
     },
 
+    // Max a single legitimate payout can ever be:
+    // Sugar Rush 100x bonus buy * highest possible return = ~$200,000 at extreme bets.
+    // Anything larger than this in one call is console tampering.
+    _MAX_SINGLE_CREDIT: 250000,
+    _MAX_BALANCE: 999999,
+
     adjustBalance(amount) {
-        this.userData.balance += amount;
-        if (this.userData.balance < 0) this.userData.balance = 0;
+        if (!this.userData) return;
+
+        // Reject NaN, Infinity, objects, strings, etc.
+        if (typeof amount !== 'number' || !isFinite(amount)) return;
+
+        // Reject any single credit larger than the biggest realistic game payout
+        if (amount > this._MAX_SINGLE_CREDIT) return;
+
+        this.userData.balance = Math.min(
+            this._MAX_BALANCE,
+            Math.max(0, this.userData.balance + amount)
+        );
         this.saveUserData();
         this.updateDisplay();
     },
