@@ -384,8 +384,8 @@
                         let html = `<span>${this.symbols[this.grid[r][c]].emoji}</span>`;
                         
                         let expCount = this.explosionTracker[r][c];
-                        if (expCount >= 2) {
-                            let mult = Math.min(128, Math.pow(2, expCount - 1));
+                        if (expCount >= 1) {
+                            let mult = Math.min(128, Math.pow(2, expCount));
                             html += `<div class="spot-multiplier">${mult}x</div>`;
                         }
 
@@ -499,8 +499,8 @@
 
                     cluster.forEach(([r, c]) => {
                         let expCount = this.explosionTracker[r][c];
-                        if (expCount >= 2) {
-                            totalSpotMult += Math.min(128, Math.pow(2, expCount - 1));
+                        if (expCount >= 1) {
+                            totalSpotMult += Math.min(128, Math.pow(2, expCount));
                         }
                     });
 
