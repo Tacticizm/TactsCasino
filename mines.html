@@ -135,163 +135,158 @@
     <script>
         Platform.init('mines');
 
-        const MinesGame = {
-            isPlaying: false,
-            betAmt: 0,
-            mineCount: 3,
-            revealedCount: 0,
-            gridData: [], // true = mine, false = gem
-            currentMultiplier: 1.00,
-            
-            DOM: {},
+        // Wrapped in IIFE — MinesGame is NOT a global variable.
+        // gridData lives in the closure below, invisible to console inspection.
+        (function () {
+            // ── Private state — not accessible from the browser console ──
+            let _gridData = [];   // true = mine, false = gem (hidden from console)
 
-            init() {
-                this.DOM = {
-                    grid: document.getElementById('mines-grid'),
-                    betInput: document.getElementById('mines-bet'),
-                    mineSelect: document.getElementById('mines-count'),
-                    actionBtn: document.getElementById('btn-mines-action'),
-                    multiplierText: document.getElementById('mines-multiplier')
-                };
+            const MinesGame = {
+                isPlaying: false,
+                betAmt: 0,
+                mineCount: 3,
+                revealedCount: 0,
+                currentMultiplier: 1.00,
+                DOM: {},
 
-                this.drawGrid();
+                init() {
+                    this.DOM = {
+                        grid: document.getElementById('mines-grid'),
+                        betInput: document.getElementById('mines-bet'),
+                        mineSelect: document.getElementById('mines-count'),
+                        actionBtn: document.getElementById('btn-mines-action'),
+                        multiplierText: document.getElementById('mines-multiplier')
+                    };
 
-                this.DOM.actionBtn.onclick = () => {
-                    if(!this.isPlaying) this.startRound();
-                    else this.cashOut();
-                };
-            },
+                    this.drawGrid();
 
-            drawGrid() {
-                this.DOM.grid.innerHTML = '';
-                for(let i = 0; i < 25; i++) {
-                    const tile = document.createElement('div');
-                    tile.className = 'mine-tile disabled';
-                    tile.id = `mine-tile-${i}`;
-                    tile.onclick = () => this.clickTile(i);
-                    this.DOM.grid.appendChild(tile);
-                }
-            },
+                    this.DOM.actionBtn.onclick = () => {
+                        if (!this.isPlaying) this.startRound();
+                        else this.cashOut();
+                    };
+                },
 
-            startRound() {
-                const bet = parseFloat(this.DOM.betInput.value);
-                const mines = parseInt(this.DOM.mineSelect.value);
+                drawGrid() {
+                    this.DOM.grid.innerHTML = '';
+                    for (let i = 0; i < 25; i++) {
+                        const tile = document.createElement('div');
+                        tile.className = 'mine-tile disabled';
+                        tile.id = `mine-tile-${i}`;
+                        tile.onclick = () => this.clickTile(i);
+                        this.DOM.grid.appendChild(tile);
+                    }
+                },
 
-                if(isNaN(bet) || bet <= 0 || bet > Platform.balance) return alert("Invalid Bet or Insufficient Balance!");
-                
-                Platform.adjustBalance(-bet);
-                this.betAmt = bet;
-                this.mineCount = mines;
-                this.revealedCount = 0;
-                this.currentMultiplier = 1.00;
-                this.isPlaying = true;
-                
-                // Generate Mines (Fisher-Yates shuffle array of 25)
-                this.gridData = Array(25).fill(false);
-                for(let i=0; i<this.mineCount; i++) this.gridData[i] = true;
-                this.gridData.sort(() => Math.random() - 0.5); // Simple shuffle
+                startRound() {
+                    const bet   = parseFloat(this.DOM.betInput.value);
+                    const mines = parseInt(this.DOM.mineSelect.value);
 
-                // Reset UI
-                this.DOM.actionBtn.innerText = "Cash Out";
-                this.DOM.actionBtn.style.background = "var(--warning)";
-                this.DOM.actionBtn.disabled = true; // Can't cash out on 0 clicks
-                this.DOM.betInput.disabled = true;
-                this.DOM.mineSelect.disabled = true;
-                this.DOM.multiplierText.innerText = "1.00x";
-                this.DOM.multiplierText.style.color = "var(--text-main)";
+                    if (isNaN(bet) || bet <= 0 || bet > Platform.balance)
+                        return Platform.showAlert('Invalid Bet or Insufficient Balance!', 'Wager Error');
 
-                // Clear board classes
-                document.querySelectorAll('.mine-tile').forEach(t => {
-                    t.className = 'mine-tile';
-                    t.innerHTML = '';
-                });
-            },
+                    Platform.adjustBalance(-bet);
+                    this.betAmt           = bet;
+                    this.mineCount        = mines;
+                    this.revealedCount    = 0;
+                    this.currentMultiplier = 1.00;
+                    this.isPlaying        = true;
 
-            clickTile(index) {
-                if(!this.isPlaying) return;
-                
-                const tile = document.getElementById(`mine-tile-${index}`);
-                if(tile.classList.contains('revealed')) return; // Already clicked
+                    // Generate mine positions into the private closure variable —
+                    // never stored as a property on MinesGame.
+                    _gridData = Array(25).fill(false);
+                    for (let i = 0; i < this.mineCount; i++) _gridData[i] = true;
+                    // Fisher-Yates shuffle using crypto random for better distribution
+                    for (let i = 24; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [_gridData[i], _gridData[j]] = [_gridData[j], _gridData[i]];
+                    }
 
-                tile.classList.add('revealed');
+                    this.DOM.actionBtn.innerText       = 'Cash Out';
+                    this.DOM.actionBtn.style.background = 'var(--warning)';
+                    this.DOM.actionBtn.disabled         = true;
+                    this.DOM.betInput.disabled          = true;
+                    this.DOM.mineSelect.disabled        = true;
+                    this.DOM.multiplierText.innerText   = '1.00x';
+                    this.DOM.multiplierText.style.color = 'var(--text-main)';
 
-                const isMine = this.gridData[index];
+                    document.querySelectorAll('.mine-tile').forEach(t => {
+                        t.className = 'mine-tile';
+                        t.innerHTML = '';
+                    });
+                },
 
-                if(isMine) {
-                    // BUST!
-                    tile.innerHTML = '💣';
-                    tile.classList.add('boom');
-                    this.endRound(false);
-                } else {
-                    // SAFE!
-                    tile.innerHTML = '💎';
-                    tile.classList.add('gem');
-                    this.revealedCount++;
-                    
-                    this.currentMultiplier = this.calculateMultiplier(this.revealedCount);
-                    this.DOM.multiplierText.innerText = `${this.currentMultiplier.toFixed(2)}x`;
-                    this.DOM.multiplierText.style.color = "var(--success)";
-                    
-                    this.DOM.actionBtn.disabled = false;
-                    this.DOM.actionBtn.innerText = `Cash Out ${(this.betAmt * this.currentMultiplier).toFixed(2)}`;
+                clickTile(index) {
+                    if (!this.isPlaying) return;
+                    const tile = document.getElementById(`mine-tile-${index}`);
+                    if (tile.classList.contains('revealed')) return;
 
-                    // Auto-win if all gems found
-                    if(this.revealedCount === 25 - this.mineCount) {
-                        this.cashOut();
+                    tile.classList.add('revealed');
+                    const isMine = _gridData[index];
+
+                    if (isMine) {
+                        tile.innerHTML = '💣';
+                        tile.classList.add('boom');
+                        this.endRound(false);
+                    } else {
+                        tile.innerHTML = '💎';
+                        tile.classList.add('gem');
+                        this.revealedCount++;
+
+                        this.currentMultiplier = this.calculateMultiplier(this.revealedCount);
+                        this.DOM.multiplierText.innerText   = `${this.currentMultiplier.toFixed(2)}x`;
+                        this.DOM.multiplierText.style.color = 'var(--success)';
+
+                        this.DOM.actionBtn.disabled   = false;
+                        this.DOM.actionBtn.innerText  = `Cash Out ${(this.betAmt * this.currentMultiplier).toFixed(2)}`;
+
+                        if (this.revealedCount === 25 - this.mineCount) this.cashOut();
+                    }
+                },
+
+                calculateMultiplier(revealedGems) {
+                    let prob = 1.0;
+                    const safeTotal = 25 - this.mineCount;
+                    for (let i = 0; i < revealedGems; i++)
+                        prob *= (safeTotal - i) / (25 - i);
+                    return 0.99 / prob;
+                },
+
+                cashOut() {
+                    if (!this.isPlaying || this.revealedCount === 0) return;
+                    const winAmount = this.betAmt * this.currentMultiplier;
+                    Platform.adjustBalance(winAmount);
+                    this.endRound(true);
+                },
+
+                endRound(success) {
+                    this.isPlaying = false;
+                    Platform.recordGame('mines', this.betAmt, success ? (this.betAmt * this.currentMultiplier) : 0);
+
+                    // Reveal remaining tiles using private _gridData, then wipe it
+                    for (let i = 0; i < 25; i++) {
+                        const tile = document.getElementById(`mine-tile-${i}`);
+                        if (!tile.classList.contains('revealed')) {
+                            tile.classList.add('revealed', 'dimmed');
+                            tile.innerHTML = _gridData[i] ? '💣' : '💎';
+                        }
+                    }
+                    _gridData = []; // clear immediately after reveal
+
+                    this.DOM.actionBtn.innerText       = 'Bet';
+                    this.DOM.actionBtn.style.background = 'var(--success)';
+                    this.DOM.actionBtn.disabled         = false;
+                    this.DOM.betInput.disabled          = false;
+                    this.DOM.mineSelect.disabled        = false;
+
+                    if (!success) {
+                        this.DOM.multiplierText.innerText   = 'Bust 0.00x';
+                        this.DOM.multiplierText.style.color = 'var(--danger)';
                     }
                 }
-            },
+            };
 
-            // Calculates payout mathematically (with a ~1% house edge)
-            calculateMultiplier(revealedGems) {
-                let prob = 1.0;
-                let safeRemaining = 25 - this.mineCount;
-                let totalRemaining = 25;
-                
-                for (let i = 0; i < revealedGems; i++) {
-                    prob *= (safeRemaining - i) / (totalRemaining - i);
-                }
-                
-                return (0.99 / prob); 
-            },
-
-            cashOut() {
-                if(!this.isPlaying || this.revealedCount === 0) return;
-                
-                const winAmount = this.betAmt * this.currentMultiplier;
-                Platform.adjustBalance(winAmount);
-                this.endRound(true);
-            },
-
-            endRound(success) {
-                this.isPlaying = false;
-
-            Platform.recordGame('crash', this.betAmt, success ? (this.betAmt * this.currentMul) : 0);
-                
-                // Reveal remaining unclicked tiles
-                for(let i=0; i<25; i++) {
-                    const tile = document.getElementById(`mine-tile-${i}`);
-                    if(!tile.classList.contains('revealed')) {
-                        tile.classList.add('revealed', 'dimmed');
-                        tile.innerHTML = this.gridData[i] ? '💣' : '💎';
-                    }
-                }
-
-                // Reset Controls
-                this.DOM.actionBtn.innerText = "Bet";
-                this.DOM.actionBtn.style.background = "var(--success)";
-                this.DOM.actionBtn.disabled = false;
-                this.DOM.betInput.disabled = false;
-                this.DOM.mineSelect.disabled = false;
-
-                if(!success) {
-                    this.DOM.multiplierText.innerText = "Bust 0.00x";
-                    this.DOM.multiplierText.style.color = "var(--danger)";
-                }
-            }
-        };
-
-        MinesGame.init();
+            MinesGame.init();
+        })();
     </script>
 </body>
 </html>
