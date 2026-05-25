@@ -103,20 +103,21 @@
 
         .sugar-float {
             position: absolute;
-            color: #00ff2a;
-            font-size: 18px;
+            color: #00ff44;
+            font-size: 22px;
             font-weight: 900;
-            text-shadow: 2px 2px 0 #000, -2px -2px 0 #000;
-            z-index: 20;
+            text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 0 0 8px rgba(0,255,68,0.6);
+            z-index: 40;
             pointer-events: none;
-            animation: floatUp 2s ease-out forwards;
+            animation: floatUp 3.5s ease-out forwards;
             white-space: nowrap;
         }
 
         @keyframes floatUp {
-            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
-            15% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
-            100% { opacity: 0; transform: translate(-50%, -120%) scale(1.5); }
+            0%   { opacity: 0;   transform: translate(-50%, -50%) scale(0.6); }
+            12%  { opacity: 1;   transform: translate(-50%, -50%) scale(1.3); }
+            70%  { opacity: 1;   transform: translate(-50%, -130%) scale(1.1); }
+            100% { opacity: 0;   transform: translate(-50%, -200%) scale(1.0); }
         }
 
         .bonus-tracker {
@@ -207,7 +208,11 @@
                     </div>
                 </div>
                 
-                <div class="sugar-grid" id="sugar-grid"></div>
+                <div style="position:relative; max-width:480px; margin:0 auto 15px;">
+                    <div class="sugar-grid" id="sugar-grid" style="margin-bottom:0;"></div>
+                    <!-- Floating win numbers live here — NOT inside cells, so renderGrid can't destroy them -->
+                    <div id="sugar-win-layer" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:40;overflow:visible;"></div>
+                </div>
 
                 <div class="bonus-tracker" id="bonus-tracker">
                     🌟 Bonus Total Win: <span id="bonus-total-win">0</span> 🌟
@@ -480,28 +485,28 @@
 
                 let tumbleWin = 0;
 
+                // ── Step 1: highlight all winning cells ──
                 clusters.forEach(cluster => {
                     cluster.forEach(([r, c]) => {
                         document.getElementById(`cell-${r}-${c}`).classList.add('win-pulse');
                     });
                 });
 
-                await new Promise(r => setTimeout(r, 400));
+                await new Promise(r => setTimeout(r, 650)); // was 400 — give players time to see what won
 
+                // ── Step 2: calculate wins, explode cells, spawn floats ──
                 clusters.forEach(cluster => {
                     let symKey = this.grid[cluster[0][0]][cluster[0][1]];
-                    let emoji = this.symbols[symKey].emoji;
-                    let size = cluster.length;
-                    
-                    let sizeMult = this.sizeMultTable[Math.min(size, 15)] || 65;
+                    let emoji  = this.symbols[symKey].emoji;
+                    let size   = cluster.length;
+
+                    let sizeMult      = this.sizeMultTable[Math.min(size, 15)] || 65;
                     let clusterBaseWin = this.symbols[symKey].basePayout * sizeMult * this.bet;
-                    let totalSpotMult = 0;
+                    let totalSpotMult  = 0;
 
                     cluster.forEach(([r, c]) => {
                         let expCount = this.explosionTracker[r][c];
-                        if (expCount >= 1) {
-                            totalSpotMult += Math.min(128, Math.pow(2, expCount));
-                        }
+                        if (expCount >= 1) totalSpotMult += Math.min(128, Math.pow(2, expCount));
                     });
 
                     let finalClusterWin = totalSpotMult > 0 ? clusterBaseWin * totalSpotMult : clusterBaseWin;
@@ -511,28 +516,34 @@
                         let cell = document.getElementById(`cell-${r}-${c}`);
                         cell.classList.remove('win-pulse');
                         cell.classList.add('explode');
-                        this.explosionTracker[r][c]++; 
-                        this.grid[r][c] = null; 
+                        this.explosionTracker[r][c]++;
+                        this.grid[r][c] = null;
                     });
 
-                    let mid = cluster[Math.floor(size/2)];
+                    let mid = cluster[Math.floor(size / 2)];
                     this.spawnFloatingWin(mid[0], mid[1], finalClusterWin, emoji);
                 });
 
                 this.currentTumbleWin += tumbleWin;
                 this.DOM.win.innerText = this.currentTumbleWin.toFixed(2);
 
-                await new Promise(r => setTimeout(r, 300));
+                // Show a clear combined-win line so players see ALL clusters counted
+                if (tumbleWin > 0) {
+                    const clusterWord = clusters.length > 1 ? `${clusters.length} clusters` : `1 cluster`;
+                    this.DOM.status.style.color = 'var(--success)';
+                    this.DOM.status.innerText   = `+$${tumbleWin.toFixed(2)} (${clusterWord})  ·  Total: $${this.currentTumbleWin.toFixed(2)}`;
+                }
 
+                await new Promise(r => setTimeout(r, 700)); // was 300 — floats stay visible before new symbols drop
+
+                // ── Step 3: gravity + refill ──
                 let alteredCells = [];
 
                 for (let c = 0; c < 7; c++) {
                     let writeY = 6;
                     for (let r = 6; r >= 0; r--) {
                         if (this.grid[r][c] !== null) {
-                            if (writeY !== r) {
-                                alteredCells.push([writeY, c]);
-                            }
+                            if (writeY !== r) alteredCells.push([writeY, c]);
                             this.grid[writeY][c] = this.grid[r][c];
                             writeY--;
                         }
@@ -543,9 +554,9 @@
                     }
                 }
 
-                this.renderGrid(alteredCells);
-                await new Promise(r => setTimeout(r, 550)); 
-                
+                this.renderGrid(alteredCells);           // floats survive — they live in sugar-win-layer
+                await new Promise(r => setTimeout(r, 500));
+
                 this.processTumbles();
             },
 
@@ -582,13 +593,19 @@
             },
 
             spawnFloatingWin(r, c, amount, emoji) {
-                const cell = document.getElementById(`cell-${r}-${c}`);
+                // Append to the persistent overlay — NOT the cell.
+                // renderGrid() does innerHTML='' on sugar-grid which would destroy
+                // any floats attached to cells after just 300ms.
+                const layer = document.getElementById('sugar-win-layer');
+                if (!layer) return;
                 const winEl = document.createElement('div');
                 winEl.className = 'sugar-float';
-                winEl.textContent = `${emoji} +${amount.toFixed(2)}`;
-                winEl.style.top = '50%'; winEl.style.left = '50%'; winEl.style.transform = 'translate(-50%, -50%)';
-                cell.appendChild(winEl);
-                setTimeout(() => { if (winEl.parentElement) winEl.parentElement.removeChild(winEl); }, 2000);
+                winEl.textContent = `${emoji} +$${amount.toFixed(2)}`;
+                // Position at the cell's centre as % of the 7×7 grid
+                winEl.style.left = `${(c + 0.5) / 7 * 100}%`;
+                winEl.style.top  = `${(r + 0.5) / 7 * 100}%`;
+                layer.appendChild(winEl);
+                setTimeout(() => winEl.remove(), 3600);
             },
 
             finishSpin() {
