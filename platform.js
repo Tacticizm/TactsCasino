@@ -151,16 +151,24 @@ const Platform = {
         this.updateBetsPanel();
     },
 
+    _GAME_LABELS: {
+        slots:    '🎰 Foodie Slots',
+        sugar:    '🍬 Sugar Rush',
+        crash:    '📈 Crash',
+        coinflip: '🪙 Coin Flip',
+        mines:    '💣 Mines',
+        plinko:   '🔽 Plinko',
+        hilo:     '📉 HiLo',
+        holdSpin: '🔥 Hold & Spin',
+    },
+
     updateBetsPanel() {
         const listEl  = document.getElementById('bets-list');
         const countEl = document.getElementById('bets-count-select');
         if (!listEl || !countEl || !this.userData) return;
 
         const count   = parseInt(countEl.value);
-        const gameId  = this.activePage;
-        const entries = (this.userData.history || [])
-            .filter(h => h.game === gameId)
-            .slice(0, count);
+        const entries = (this.userData.history || []).slice(0, count);
 
         if (entries.length === 0) {
             listEl.innerHTML = '<div class="bets-empty">No rounds yet.<br>Play a round to see results here.</div>';
@@ -168,15 +176,22 @@ const Platform = {
         }
 
         listEl.innerHTML = entries.map(e => {
-            const profit = e.win - e.bet;
-            const isWin  = profit > 0;
-            const label  = isWin
+            const profit   = e.win - e.bet;
+            const isWin    = profit > 0;
+            const result   = isWin
                 ? `+$${profit.toFixed(2)}`
                 : (e.win === 0 ? `−$${e.bet.toFixed(2)}` : `−$${Math.abs(profit).toFixed(2)}`);
+            const gameLabel = this._GAME_LABELS[e.game] || e.game;
             return `
                 <div class="bet-row ${isWin ? 'bet-row-win' : 'bet-row-loss'}">
-                    <span class="bet-row-bet">$${e.bet.toFixed(2)}</span>
-                    <span class="bet-row-result">${label}</span>
+                    <div class="bet-row-top">
+                        <span class="bet-row-game">${gameLabel}</span>
+                        <span class="bet-row-result">${result}</span>
+                    </div>
+                    <div class="bet-row-bot">
+                        <span class="bet-row-bet">Bet $${e.bet.toFixed(2)}</span>
+                        <span class="bet-row-date">${e.date || ''}</span>
+                    </div>
                 </div>`;
         }).join('');
     },
