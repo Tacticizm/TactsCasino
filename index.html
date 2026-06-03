@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -9,10 +9,13 @@
             max-width: 1000px;
             width: 100%;
             margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 36px;
         }
 
         .lobby-header {
-            margin-bottom: 36px;
+            margin-bottom: 0;
         }
 
         .lobby-header h1 {
@@ -36,156 +39,265 @@
             text-transform: uppercase;
         }
 
-        .section-label {
-            font-size: 0.72rem;
-            font-weight: 700;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 16px;
+        /* ── Provider Section ──────────────────────────────────────── */
+        .provider-section {
             display: flex;
-            align-items: center;
-            gap: 12px;
+            flex-direction: column;
+            gap: 16px;
         }
 
-        .section-label::after {
-            content: '';
-            flex: 1;
-            height: 1px;
-            background: linear-gradient(90deg, rgba(255,255,255,0.08), transparent);
+        .provider-banner {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 18px;
+            border-radius: 14px;
+            border: 1px solid;
+            position: relative;
+            overflow: hidden;
         }
+
+        .provider-banner::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            opacity: 0.06;
+            background: var(--banner-shine);
+            pointer-events: none;
+        }
+
+        /* Tact's Originals — gold theme */
+        .provider-tact {
+            background: linear-gradient(120deg, rgba(120,80,0,0.35), rgba(20,14,0,0.6));
+            border-color: rgba(255,215,0,0.18);
+            --banner-shine: linear-gradient(120deg, #ffd700, transparent 60%);
+        }
+
+        /* Pizza Hero — red/orange theme */
+        .provider-pizza {
+            background: linear-gradient(120deg, rgba(180,30,0,0.3), rgba(20,5,0,0.6));
+            border-color: rgba(255,100,50,0.18);
+            --banner-shine: linear-gradient(120deg, #ff6030, transparent 60%);
+        }
+
+        .provider-icon {
+            font-size: 2rem;
+            line-height: 1;
+            flex-shrink: 0;
+        }
+
+        .provider-text {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .provider-name {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.15rem;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            line-height: 1.1;
+        }
+
+        .provider-tact .provider-name  { color: var(--gold); }
+        .provider-pizza .provider-name { color: #ff7a45; }
+
+        .provider-tagline {
+            font-size: 0.73rem;
+            color: var(--text-muted);
+            letter-spacing: 0.3px;
+            margin-top: 2px;
+        }
+
+        .provider-count {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            flex-shrink: 0;
+        }
+
+        .provider-tact  .provider-count { background: rgba(255,215,0,0.1);  color: var(--gold);   border: 1px solid rgba(255,215,0,0.2);  }
+        .provider-pizza .provider-count { background: rgba(255,100,50,0.1); color: #ff7a45; border: 1px solid rgba(255,100,50,0.2); }
 
         .game-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
             gap: 16px;
         }
+
+        /* Empty provider placeholder */
+        .provider-empty {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 32px 20px;
+            border-radius: 14px;
+            border: 1px dashed rgba(255,100,50,0.2);
+            background: rgba(255,100,50,0.03);
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            font-style: italic;
+            letter-spacing: 0.3px;
+        }
     </style>
 </head>
 <body>
     <div class="sidebar" id="sidebar-container"></div>
-    
+
     <div class="main-content">
         <div class="top-bar" id="topbar-container"></div>
-        
+
         <div class="game-stage">
             <div class="lobby-container">
+
                 <div class="lobby-header">
                     <h1>Tact's Casino</h1>
                     <p>Choose a game &amp; place your bets</p>
                 </div>
 
-                <div class="section-label">All Games</div>
-
-                <div class="game-grid">
-
-                    <a href="slots.html" class="game-card" style="--card-col1:#d97706; --card-col2:#7c2d12;">
-                        <div class="card-thumb">
-                            <span class="card-emoji">🎰</span>
+                <!-- ── Tact's Originals ───────────────────────────────────── -->
+                <div class="provider-section">
+                    <div class="provider-banner provider-tact">
+                        <div class="provider-icon">⭐</div>
+                        <div class="provider-text">
+                            <div class="provider-name">Tact's Originals</div>
+                            <div class="provider-tagline">Exclusive in-house games built for Tact's Casino</div>
                         </div>
-                        <div class="card-info">
-                            <div class="card-title">Foodie Slots</div>
-                            <div class="card-bottom">
-                                <span class="card-desc">Match symbols for big wins</span>
-                                <span class="card-play">Play ›</span>
+                        <div class="provider-count">8 GAMES</div>
+                    </div>
+
+                    <div class="game-grid">
+
+                        <a href="slots.html" class="game-card" style="--card-col1:#d97706; --card-col2:#7c2d12;">
+                            <div class="card-thumb">
+                                <span class="card-emoji">🎰</span>
                             </div>
-                        </div>
-                    </a>
-
-                    <a href="sugar-rush.html" class="game-card" style="--card-col1:#be185d; --card-col2:#701a75;">
-                        <span class="card-badge card-badge-hot">🔥 Hot</span>
-                        <div class="card-thumb">
-                            <span class="card-emoji">🍬</span>
-                        </div>
-                        <div class="card-info">
-                            <div class="card-title">Sugar Rush</div>
-                            <div class="card-bottom">
-                                <span class="card-desc">Sweet cluster pays</span>
-                                <span class="card-play">Play ›</span>
+                            <div class="card-info">
+                                <div class="card-title">Foodie Slots</div>
+                                <div class="card-bottom">
+                                    <span class="card-desc">Match symbols for big wins</span>
+                                    <span class="card-play">Play ›</span>
+                                </div>
                             </div>
-                        </div>
-                    </a>
+                        </a>
 
-                    <a href="crash.html" class="game-card" style="--card-col1:#dc2626; --card-col2:#7f1d1d;">
-                        <div class="card-thumb">
-                            <span class="card-emoji">📈</span>
-                        </div>
-                        <div class="card-info">
-                            <div class="card-title">Crash</div>
-                            <div class="card-bottom">
-                                <span class="card-desc">Cash out before it crashes</span>
-                                <span class="card-play">Play ›</span>
+                        <a href="sugar-rush.html" class="game-card" style="--card-col1:#be185d; --card-col2:#701a75;">
+                            <span class="card-badge card-badge-hot">🔥 Hot</span>
+                            <div class="card-thumb">
+                                <span class="card-emoji">🍬</span>
                             </div>
-                        </div>
-                    </a>
-
-                    <a href="coinflip.html" class="game-card" style="--card-col1:#b45309; --card-col2:#1c1917;">
-                        <div class="card-thumb">
-                            <span class="card-emoji">🪙</span>
-                        </div>
-                        <div class="card-info">
-                            <div class="card-title">Coin Flip</div>
-                            <div class="card-bottom">
-                                <span class="card-desc">Double or nothing</span>
-                                <span class="card-play">Play ›</span>
+                            <div class="card-info">
+                                <div class="card-title">Sugar Rush</div>
+                                <div class="card-bottom">
+                                    <span class="card-desc">Sweet cluster pays</span>
+                                    <span class="card-play">Play ›</span>
+                                </div>
                             </div>
-                        </div>
-                    </a>
+                        </a>
 
-                    <a href="mines.html" class="game-card" style="--card-col1:#c2410c; --card-col2:#1c0a00;">
-                        <div class="card-thumb">
-                            <span class="card-emoji">💣</span>
-                        </div>
-                        <div class="card-info">
-                            <div class="card-title">Mines</div>
-                            <div class="card-bottom">
-                                <span class="card-desc">Navigate the minefield</span>
-                                <span class="card-play">Play ›</span>
+                        <a href="crash.html" class="game-card" style="--card-col1:#dc2626; --card-col2:#7f1d1d;">
+                            <div class="card-thumb">
+                                <span class="card-emoji">📈</span>
                             </div>
-                        </div>
-                    </a>
-
-                    <a href="hilo.html" class="game-card" style="--card-col1:#6d28d9; --card-col2:#1e0a3c;">
-                        <div class="card-thumb">
-                            <span class="card-emoji">📉</span>
-                        </div>
-                        <div class="card-info">
-                            <div class="card-title">HiLo</div>
-                            <div class="card-bottom">
-                                <span class="card-desc">Higher or lower?</span>
-                                <span class="card-play">Play ›</span>
+                            <div class="card-info">
+                                <div class="card-title">Crash</div>
+                                <div class="card-bottom">
+                                    <span class="card-desc">Cash out before it crashes</span>
+                                    <span class="card-play">Play ›</span>
+                                </div>
                             </div>
-                        </div>
-                    </a>
+                        </a>
 
-                    <a href="plinko.html" class="game-card" style="--card-col1:#0e7490; --card-col2:#082f49;">
-                        <div class="card-thumb">
-                            <span class="card-emoji">🔽</span>
-                        </div>
-                        <div class="card-info">
-                            <div class="card-title">Plinko</div>
-                            <div class="card-bottom">
-                                <span class="card-desc">Drop the ball, win big</span>
-                                <span class="card-play">Play ›</span>
+                        <a href="coinflip.html" class="game-card" style="--card-col1:#b45309; --card-col2:#1c1917;">
+                            <div class="card-thumb">
+                                <span class="card-emoji">🪙</span>
                             </div>
-                        </div>
-                    </a>
-
-                    <a href="hold-spin.html" class="game-card" style="--card-col1:#dc2626; --card-col2:#7c1d1d;">
-                        <span class="card-badge card-badge-new">✨ New</span>
-                        <div class="card-thumb">
-                            <span class="card-emoji">🔥</span>
-                        </div>
-                        <div class="card-info">
-                            <div class="card-title">Hold &amp; Spin</div>
-                            <div class="card-bottom">
-                                <span class="card-desc">6 coins ignites Hold &amp; Spin</span>
-                                <span class="card-play">Play ›</span>
+                            <div class="card-info">
+                                <div class="card-title">Coin Flip</div>
+                                <div class="card-bottom">
+                                    <span class="card-desc">Double or nothing</span>
+                                    <span class="card-play">Play ›</span>
+                                </div>
                             </div>
-                        </div>
-                    </a>
+                        </a>
 
+                        <a href="mines.html" class="game-card" style="--card-col1:#c2410c; --card-col2:#1c0a00;">
+                            <div class="card-thumb">
+                                <span class="card-emoji">💣</span>
+                            </div>
+                            <div class="card-info">
+                                <div class="card-title">Mines</div>
+                                <div class="card-bottom">
+                                    <span class="card-desc">Navigate the minefield</span>
+                                    <span class="card-play">Play ›</span>
+                                </div>
+                            </div>
+                        </a>
+
+                        <a href="hilo.html" class="game-card" style="--card-col1:#6d28d9; --card-col2:#1e0a3c;">
+                            <div class="card-thumb">
+                                <span class="card-emoji">📉</span>
+                            </div>
+                            <div class="card-info">
+                                <div class="card-title">HiLo</div>
+                                <div class="card-bottom">
+                                    <span class="card-desc">Higher or lower?</span>
+                                    <span class="card-play">Play ›</span>
+                                </div>
+                            </div>
+                        </a>
+
+                        <a href="plinko.html" class="game-card" style="--card-col1:#0e7490; --card-col2:#082f49;">
+                            <div class="card-thumb">
+                                <span class="card-emoji">🔽</span>
+                            </div>
+                            <div class="card-info">
+                                <div class="card-title">Plinko</div>
+                                <div class="card-bottom">
+                                    <span class="card-desc">Drop the ball, win big</span>
+                                    <span class="card-play">Play ›</span>
+                                </div>
+                            </div>
+                        </a>
+
+                        <a href="hold-spin.html" class="game-card" style="--card-col1:#dc2626; --card-col2:#7c1d1d;">
+                            <span class="card-badge card-badge-new">✨ New</span>
+                            <div class="card-thumb">
+                                <span class="card-emoji">🔥</span>
+                            </div>
+                            <div class="card-info">
+                                <div class="card-title">Hold &amp; Spin</div>
+                                <div class="card-bottom">
+                                    <span class="card-desc">3 coins ignites Hold &amp; Spin</span>
+                                    <span class="card-play">Play ›</span>
+                                </div>
+                            </div>
+                        </a>
+
+                    </div>
                 </div>
+
+                <!-- ── Pizza Hero Gambling ────────────────────────────────── -->
+                <div class="provider-section">
+                    <div class="provider-banner provider-pizza">
+                        <div class="provider-icon">🍕</div>
+                        <div class="provider-text">
+                            <div class="provider-name">Pizza Hero Gambling</div>
+                            <div class="provider-tagline">Games by Pizza Hero — dropping soon</div>
+                        </div>
+                        <div class="provider-count">COMING SOON</div>
+                    </div>
+
+                    <div class="provider-empty">
+                        🍕 &nbsp;Pizza Hero games are on the way — check back soon!
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
@@ -196,7 +308,6 @@
     <script src="firebase-init.js"></script>
     <script src="platform.js"></script>
     <script>
-        // Initialize the platform. Passing 'home' keeps sidebar highlighting clear until they enter a game.
         Platform.init('home');
     </script>
 </body>
