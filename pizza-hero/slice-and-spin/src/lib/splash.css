@@ -1,0 +1,334 @@
+/* PIZZA HERO STUDIO SPLASH (v3 — Studio Bumper). Vendored from PHG Shared. */
+
+@import url('https://fonts.googleapis.com/css2?family=Bungee&family=Outfit:wght@400;600;800&display=swap');
+
+.phs-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  font-family: 'Outfit', system-ui, sans-serif;
+  background: radial-gradient(ellipse at 50% 40%, #2a0810 0%, #100308 55%, #000 100%);
+  opacity: 0;
+  animation: phs-fade-in 0.4s ease-out forwards;
+}
+.phs-splash.phs-out {
+  animation: phs-fade-out 1.1s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+
+/* contained mode: fill the mount element (the game stage) instead of the
+   viewport, and size content to the container so it fits the smaller box. */
+.phs-splash.phs-contained {
+  position: absolute;
+  z-index: 50;
+  border-radius: 20px;
+  container-type: size;
+}
+.phs-contained .phs-title {
+  font-size: clamp(26px, 13cqw, 76px);
+}
+.phs-contained .phs-tagline {
+  margin-top: 12px;
+  font-size: clamp(11px, 2.6cqw, 18px);
+}
+.phs-contained .phs-warn {
+  margin-top: 14px;
+  max-width: 80cqw;
+  padding: 8px 14px;
+  font-size: clamp(10px, 2.4cqw, 13px);
+}
+.phs-contained .phs-loader {
+  margin-top: 22px;
+  width: clamp(140px, 36cqw, 240px);
+}
+.phs-contained .phs-prompt {
+  bottom: 6cqh;
+  font-size: clamp(9px, 1.6cqw, 11px);
+}
+.phs-contained .phs-mark {
+  top: 4cqh;
+  right: 5cqw;
+}
+.phs-splash.phs-shake {
+  animation:
+    phs-fade-in 0.4s ease-out forwards,
+    phs-shake 0.45s ease-out;
+}
+@keyframes phs-fade-in {
+  to {
+    opacity: 1;
+  }
+}
+@keyframes phs-fade-out {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.06);
+  }
+}
+@keyframes phs-shake {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  20% {
+    transform: translate(-6px, 4px);
+  }
+  40% {
+    transform: translate(5px, -3px);
+  }
+  60% {
+    transform: translate(-3px, 4px);
+  }
+  80% {
+    transform: translate(3px, -1px);
+  }
+}
+
+.phs-splash::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(255, 200, 100, 0.07) 1px, transparent 1.5px);
+  background-size: 7px 7px;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+.phs-splash::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 35%, rgba(0, 0, 0, 0.7) 100%);
+  pointer-events: none;
+}
+
+.phs-rays {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 160vmax;
+  height: 160vmax;
+  background: repeating-conic-gradient(
+    from 0deg,
+    rgba(244, 197, 66, 0.16) 0deg 3deg,
+    transparent 3deg 22deg
+  );
+  transform: translate(-50%, -50%) scale(0.5) rotate(0deg);
+  opacity: 0;
+  animation:
+    phs-rays-in 0.7s 0.3s cubic-bezier(0.34, 1.4, 0.64, 1) forwards,
+    phs-rays-spin 40s 1s linear infinite;
+}
+@keyframes phs-rays-in {
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1) rotate(15deg);
+  }
+}
+@keyframes phs-rays-spin {
+  from {
+    transform: translate(-50%, -50%) scale(1) rotate(15deg);
+  }
+  to {
+    transform: translate(-50%, -50%) scale(1) rotate(375deg);
+  }
+}
+
+.phs-shockwave {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  border: 4px solid #f4c542;
+  transform: translate(-50%, -50%) scale(0);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1;
+  animation: phs-shockwave 0.9s 1.05s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes phs-shockwave {
+  0% {
+    opacity: 0.85;
+    transform: translate(-50%, -50%) scale(0);
+    border-width: 5px;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(7);
+    border-width: 1px;
+  }
+}
+
+.phs-title {
+  position: relative;
+  z-index: 2;
+  margin: 0;
+  font-family: 'Bungee', sans-serif;
+  font-size: clamp(44px, 9.5vw, 104px);
+  color: #f4c542;
+  letter-spacing: 0.035em;
+  line-height: 0.95;
+  text-shadow:
+    2px 2px 0 #c8102e,
+    4px 4px 0 #8b0a1f,
+    6px 6px 0 #4a0410,
+    8px 10px 24px rgba(0, 0, 0, 0.65);
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.015em;
+}
+.phs-title span {
+  display: inline-block;
+  opacity: 0;
+  transform: scale(2.5) translateY(-30px) rotate(-6deg);
+  animation: phs-letter 0.5s cubic-bezier(0.34, 1.7, 0.64, 1) forwards;
+}
+.phs-title .phs-space {
+  width: 0.35em;
+}
+@keyframes phs-letter {
+  0% {
+    opacity: 0;
+    transform: scale(2.5) translateY(-30px) rotate(-6deg);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(0.9) translateY(0) rotate(2deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0) rotate(0);
+  }
+}
+
+.phs-tagline {
+  position: relative;
+  z-index: 2;
+  margin: 18px 0 0;
+  padding-left: 0.5em;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  font-size: clamp(13px, 1.9vw, 19px);
+  letter-spacing: 0.5em;
+  color: #f5e6c8;
+  opacity: 0;
+  transform: translateY(16px);
+  animation: phs-tagline-in 0.6s 1.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes phs-tagline-in {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* volatility warning (game-specific addition) */
+.phs-warn {
+  position: relative;
+  z-index: 2;
+  margin: 18px auto 0;
+  max-width: min(440px, 86vw);
+  padding: 10px 18px;
+  font-family: 'Outfit', sans-serif;
+  font-size: clamp(12px, 1.7vw, 14px);
+  line-height: 1.45;
+  text-align: center;
+  color: #ffd9c2;
+  border: 1px solid rgba(244, 197, 66, 0.5);
+  border-radius: 12px;
+  background: rgba(200, 16, 46, 0.18);
+  opacity: 0;
+  animation: phs-fade-up 0.5s 1.95s ease-out forwards;
+}
+.phs-warn b,
+.phs-warn strong {
+  color: #f4c542;
+}
+
+.phs-loader {
+  position: relative;
+  z-index: 2;
+  width: clamp(180px, 22vw, 260px);
+  height: 3px;
+  margin-top: 36px;
+  background: rgba(245, 230, 200, 0.14);
+  border-radius: 2px;
+  overflow: hidden;
+  opacity: 0;
+  animation: phs-fade-up 0.4s 2.1s ease-out forwards;
+}
+.phs-loader-fill {
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg, #c8102e 0%, #f4c542 100%);
+  box-shadow: 0 0 14px rgba(244, 197, 66, 0.65);
+  border-radius: 2px;
+  animation: phs-loader-fill 1.5s 2.1s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+@keyframes phs-fade-up {
+  to {
+    opacity: 1;
+  }
+}
+@keyframes phs-loader-fill {
+  to {
+    width: 100%;
+  }
+}
+
+.phs-prompt {
+  position: absolute;
+  bottom: 48px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Outfit', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: rgba(245, 230, 200, 0.75);
+  opacity: 0;
+  animation:
+    phs-fade-up 0.4s 2.6s ease-out forwards,
+    phs-prompt-pulse 1.8s 2.6s ease-in-out infinite;
+}
+@keyframes phs-prompt-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.95;
+  }
+}
+
+.phs-mark {
+  position: absolute;
+  top: 28px;
+  right: 30px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.35em;
+  color: rgba(245, 230, 200, 0.45);
+  text-transform: uppercase;
+  opacity: 0;
+  animation: phs-fade-up 0.5s 2.3s ease-out forwards;
+}
+.phs-mark::before {
+  content: '◆';
+  margin-right: 8px;
+  color: #c8102e;
+}
