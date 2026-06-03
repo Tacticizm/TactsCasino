@@ -84,7 +84,7 @@
             border-bottom: 1px solid rgba(255,255,255,0.04);
         }
         .pay-row:last-child { border-bottom: none; }
-        .pay-sym     { font-size: 1rem; line-height: 1.3; }
+        .pay-sym     { font-size: 1rem; line-height: 1.4; }
         .pay-sym-bar { font-size: 0.82rem; font-weight: 900; color: #fbbf24; }
         .pay-vals    { color: var(--text-muted); font-size: 0.72rem; }
 
@@ -95,6 +95,7 @@
             flex-direction: column;
             align-items: center;
             gap: 14px;
+            overflow: visible;
         }
 
         .hs-status {
@@ -105,33 +106,35 @@
             font-size: 1.05rem;
             font-weight: 700;
             gap: 18px;
-            color: var(--text-muted);
         }
         .hs-fire  { color: #f97316; }
         .hs-gold  { color: #fbbf24; }
         .hs-green { color: var(--success); }
 
-        /* ── Grid ─────────────────────────────────────────────────────── */
+        /* ── 3×3 Grid ─────────────────────────────────────────────────── */
         .hs-grid-wrapper {
             position: relative;
+            overflow: visible;
         }
 
         .hs-grid {
             display: grid;
-            grid-template-columns: repeat(5, 90px);
-            grid-template-rows:    repeat(3, 82px);
-            gap: 8px;
+            grid-template-columns: repeat(3, 110px);
+            grid-template-rows:    repeat(3, 100px);
+            gap: 10px;
             background: #0c0e13;
-            padding: 14px;
+            padding: 16px;
             border-radius: 14px;
             border: 2px solid #2a1a0e;
-            box-shadow: 0 0 60px rgba(220,38,38,0.12),
-                        inset 0 0 50px rgba(0,0,0,0.55);
+            box-shadow: 0 0 60px rgba(220,38,38,0.14),
+                        inset 0 0 50px rgba(0,0,0,0.6);
+            overflow: visible;
         }
 
+        /* Individual cells */
         .hs-cell {
-            width: 90px;
-            height: 82px;
+            width:  110px;
+            height: 100px;
             background: linear-gradient(155deg, #1a1713, #261c14);
             border-radius: 8px;
             border: 1px solid #3a2818;
@@ -141,9 +144,8 @@
             align-items: center;
             gap: 3px;
             position: relative;
-            overflow: hidden;
-            transition: transform 0.1s;
             user-select: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
 
         .hs-cell.is-spinning {
@@ -155,23 +157,24 @@
             100% { filter: brightness(0.45); }
         }
 
-        .hs-cell.respin-eligible {
-            background: linear-gradient(155deg, #111827, #1e2535);
-            border: 1px dashed #374151;
-            opacity: 0.6;
+        /* ── Coin in base game (unconfirmed scatter) ─────────────────── */
+        .hs-cell.coin-scatter {
+            background: linear-gradient(155deg, #3d1a00, #5a2800);
+            border: 1px solid #d97706;
         }
 
-        /* ── Coin cell ────────────────────────────────────────────────── */
-        .hs-cell.coin-cell {
+        /* ── Coin in feature (locked, glowing) ──────────────────────── */
+        .hs-cell.coin-locked {
             background: linear-gradient(155deg, #3d1a00, #6b2e00);
-            border: 2px solid #d97706;
-            animation: coinPulse 2s ease-in-out infinite alternate;
+            border: 2px solid #fbbf24;
+            animation: coinGlow 1.8s ease-in-out infinite alternate;
         }
-        @keyframes coinPulse {
-            from { box-shadow: 0 0 10px rgba(217,119,6,0.35); }
-            to   { box-shadow: 0 0 22px rgba(251,191,36,0.75),
-                               inset 0 0 12px rgba(251,191,36,0.12); }
+        @keyframes coinGlow {
+            from { box-shadow: 0 0 10px rgba(217,119,6,0.4); }
+            to   { box-shadow: 0 0 24px rgba(251,191,36,0.85),
+                               inset 0 0 14px rgba(251,191,36,0.12); }
         }
+
         .coin-val-label {
             font-size: 0.72rem;
             font-weight: 800;
@@ -179,7 +182,7 @@
             text-shadow: 0 0 6px rgba(251,191,36,0.9);
         }
 
-        /* ── Jackpot cells ────────────────────────────────────────────── */
+        /* ── Jackpot coin cells ───────────────────────────────────────── */
         .hs-cell.jp-mini-cell {
             background: linear-gradient(155deg, #1c1917, #3b3229);
             border: 2px solid #fde68a;
@@ -201,7 +204,7 @@
         }
         @keyframes grandFlame {
             from { box-shadow: 0 0 20px rgba(220,38,38,0.5); }
-            to   { box-shadow: 0 0 40px rgba(251,191,36,0.95); }
+            to   { box-shadow: 0 0 44px rgba(251,191,36,1); }
         }
         .jp-name-label {
             font-size: 0.62rem;
@@ -214,7 +217,23 @@
         .jp-major-cell .jp-name-label { color: #fb923c; }
         .jp-grand-cell .jp-name-label { color: #fca5a5; }
 
-        /* ── Win glow ────────────────────────────────────────────────── */
+        /* ── Empty / respin-eligible ──────────────────────────────────── */
+        .hs-cell.respin-eligible {
+            background: linear-gradient(155deg, #0f1520, #1a2035);
+            border: 1px dashed #334155;
+            opacity: 0.7;
+        }
+
+        /* Respin flash — brief orange pulse before coins drop */
+        .hs-cell.respin-flash {
+            animation: respinFlash 0.25s ease-in-out 3;
+        }
+        @keyframes respinFlash {
+            0%,100% { border-color: #334155; }
+            50%     { border-color: #f97316; box-shadow: 0 0 10px rgba(249,115,22,0.6); }
+        }
+
+        /* Win-line highlight */
         .hs-cell.win-glow {
             border-color: var(--success) !important;
             box-shadow: 0 0 18px rgba(34,197,94,0.7),
@@ -222,19 +241,28 @@
             animation: winPop 0.5s ease 2;
         }
         @keyframes winPop {
-            0%,100% { transform: scale(1);    }
+            0%,100% { transform: scale(1); }
             50%     { transform: scale(1.07); }
         }
 
-        /* Coin landing bounce */
-        .hs-cell.coin-land {
-            animation: landBounce 0.5s ease-out,
-                       coinPulse 2s ease-in-out 0.5s infinite alternate;
+        /* Coin land bounce */
+        .hs-cell.coin-bounce {
+            animation: landBounce 0.28s ease-out;
         }
         @keyframes landBounce {
-            0%   { transform: scale(1.5); opacity: 0; }
-            65%  { transform: scale(0.9); }
-            100% { transform: scale(1);   opacity: 1; }
+            0%   { transform: scale(1.25); }
+            55%  { transform: scale(0.93); }
+            100% { transform: scale(1); }
+        }
+
+        /* ── Absolute falling coin dropper ──────────────────────────── */
+        .coin-dropper {
+            position: absolute;
+            pointer-events: none;
+            z-index: 30;
+            transform: translate(-50%, -50%);
+            filter: drop-shadow(0 0 8px rgba(251,191,36,0.9));
+            font-size: 2.4rem;
         }
 
         /* ── Win Splash ──────────────────────────────────────────────── */
@@ -247,10 +275,10 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            z-index: 30;
+            z-index: 40;
             opacity: 0;
             pointer-events: none;
-            transition: opacity 0.3s;
+            transition: opacity 0.35s;
         }
         .hs-win-splash.visible {
             opacity: 1;
@@ -284,6 +312,16 @@
             transition: filter 0.2s;
         }
         .splash-collect-btn:hover { filter: brightness(1.15); }
+
+        /* ── Coin scatter trigger flash (3 coin found in base) ───────── */
+        .hs-cell.trigger-flash {
+            animation: triggerPulse 0.4s ease 3;
+        }
+        @keyframes triggerPulse {
+            0%,100% { transform: scale(1); }
+            50%     { transform: scale(1.15);
+                      box-shadow: 0 0 30px rgba(251,191,36,1); }
+        }
     </style>
 </head>
 <body>
@@ -291,7 +329,7 @@
     <div class="main-content">
         <div class="top-bar" id="topbar-container"></div>
         <div class="game-stage">
-            <div class="game-view" id="view-holdspins" style="max-width:920px;">
+            <div class="game-view" id="view-holdspins" style="max-width:820px;">
 
                 <div class="game-header" style="margin-bottom:18px;">
                     <h2>🔥 Hold &amp; Spin</h2>
@@ -345,36 +383,36 @@
 
                         <!-- Paytable -->
                         <div class="hs-paytable">
-                            <div class="hs-paytable-title">Line Pays (3 / 4 / 5)</div>
+                            <div class="hs-paytable-title">3-of-a-Kind Pays</div>
                             <div class="pay-row">
                                 <span class="pay-sym">7️⃣</span>
-                                <span class="pay-vals">5× / 20× / 50×</span>
+                                <span class="pay-vals">40×</span>
                             </div>
                             <div class="pay-row">
                                 <span class="pay-sym-bar">BAR</span>
-                                <span class="pay-vals">3× / 10× / 20×</span>
+                                <span class="pay-vals">20×</span>
                             </div>
                             <div class="pay-row">
                                 <span class="pay-sym">🔔</span>
-                                <span class="pay-vals">2× / 7× / 15×</span>
+                                <span class="pay-vals">12×</span>
                             </div>
                             <div class="pay-row">
                                 <span class="pay-sym">🍒</span>
-                                <span class="pay-vals">1.5× / 5× / 10×</span>
+                                <span class="pay-vals">8×</span>
                             </div>
                             <div class="pay-row">
                                 <span class="pay-sym">🍋</span>
-                                <span class="pay-vals">1× / 3× / 8×</span>
+                                <span class="pay-vals">5×</span>
                             </div>
                             <div class="pay-row">
                                 <span class="pay-sym">🍊</span>
-                                <span class="pay-vals">0.5× / 2× / 6×</span>
+                                <span class="pay-vals">3×</span>
                             </div>
                             <div class="pay-row" style="margin-top:8px;
                                  border-top:1px solid rgba(255,255,255,0.07);
                                  padding-top:7px; border-bottom:none;">
                                 <span style="font-size:0.75rem;color:#f97316;font-weight:700;">
-                                    🪙 6+ coins = Hold &amp; Spin!
+                                    🪙 3 coins = Coin Drop!
                                 </span>
                             </div>
                         </div>
@@ -385,21 +423,22 @@
                     <div class="hs-game-area">
 
                         <div class="hs-status" id="hs-status">
-                            <span>Place your bet and spin!</span>
+                            <span style="color:var(--text-muted)">Place your bet and spin!</span>
                         </div>
 
-                        <div class="hs-grid-wrapper">
+                        <!-- Grid + overlays -->
+                        <div class="hs-grid-wrapper" id="hs-grid-wrapper">
                             <div class="hs-grid" id="hs-grid">
-                                <!-- 15 cells injected by JS -->
+                                <!-- 9 cells injected by JS -->
                             </div>
-                            <!-- Win splash (covers grid) -->
+                            <!-- Win splash overlay -->
                             <div class="hs-win-splash" id="hs-win-splash">
                                 <div class="splash-fire-label" id="hs-splash-label">
-                                    🔥 Hold &amp; Spin!
+                                    🔥 Coin Drop Complete!
                                 </div>
                                 <div class="splash-win-amt" id="hs-splash-amt">$0.00</div>
                                 <button class="splash-collect-btn"
-                                        onclick="HoldSpinGame.closeSplash()">
+                                        onclick="HSGame.closeSplash()">
                                     Collect
                                 </button>
                             </div>
@@ -420,61 +459,76 @@
     <script>
         Platform.init('holdSpin');
 
-        // ── Hold & Spin Game ─────────────────────────────────────────────────────
-        const HoldSpinGame = {
+        // ── Hold & Spin Game (3×3 + Coin Drop Bonus) ────────────────────────────
+        const HSGame = {
 
-            // ── Config ───────────────────────────────────────────────────────────
+            // ── Symbol config ────────────────────────────────────────────────────
             SYMBOLS: [
-                { id: 'seven',  face: '7️⃣',  pays: { 3: 5,   4: 20, 5: 50  } },
-                { id: 'bar',    face: 'BAR', pays: { 3: 3,   4: 10, 5: 20  } },
-                { id: 'bell',   face: '🔔',  pays: { 3: 2,   4: 7,  5: 15  } },
-                { id: 'cherry', face: '🍒',  pays: { 3: 1.5, 4: 5,  5: 10  } },
-                { id: 'lemon',  face: '🍋',  pays: { 3: 1,   4: 3,  5: 8   } },
-                { id: 'orange', face: '🍊',  pays: { 3: 0.5, 4: 2,  5: 6   } },
+                { id: 'seven',  face: '7️⃣',  pay: 40 },
+                { id: 'bar',    face: 'BAR', pay: 20 },
+                { id: 'bell',   face: '🔔',  pay: 12 },
+                { id: 'cherry', face: '🍒',  pay: 8  },
+                { id: 'lemon',  face: '🍋',  pay: 5  },
+                { id: 'orange', face: '🍊',  pay: 3  },
             ],
-            // Relative spawn weights per cell (higher = more common)
-            SYM_WEIGHTS: [3, 5, 7, 10, 12, 15],   // seven → orange
-            COIN_WEIGHT: 8,                          // ~13% chance of coin per cell
+            // Relative weights (higher = more common)
+            SYM_WEIGHTS: [2, 4, 6, 9, 12, 15],   // seven → orange
+            COIN_WEIGHT: 8,                          // ~14% per cell
 
-            // Coin value table — numeric = multiplier × bet; string = jackpot name
+            // Coin value table for the bonus feature
             COIN_TABLE: [
-                { v: 0.5,    w: 30   },
-                { v: 1,      w: 25   },
-                { v: 2,      w: 18   },
-                { v: 3,      w: 10   },
-                { v: 5,      w: 7    },
-                { v: 8,      w: 5    },
-                { v: 10,     w: 3    },
-                { v: 20,     w: 1.5  },
-                { v: 'MINI', w: 1.5  },
-                { v: 'MINOR',w: 0.8  },
-                { v: 'MAJOR',w: 0.3  },
+                { v: 1,      w: 28   },
+                { v: 2,      w: 22   },
+                { v: 3,      w: 16   },
+                { v: 5,      w: 11   },
+                { v: 8,      w: 8    },
+                { v: 10,     w: 5    },
+                { v: 15,     w: 3    },
+                { v: 20,     w: 2    },
+                { v: 'MINI', w: 2    },
+                { v: 'MINOR',w: 1    },
+                { v: 'MAJOR',w: 0.4  },
                 { v: 'GRAND',w: 0.05 },
             ],
-
             JP_MULTS: { MINI: 10, MINOR: 25, MAJOR: 100, GRAND: 500 },
 
-            // 3 horizontal paylines across the 5×3 grid (cells 0-14 left→right, top→bottom)
+            // 5 paylines on the 3×3 grid (cells 0-8, row-major order)
+            // Grid layout:  [0][1][2]
+            //               [3][4][5]
+            //               [6][7][8]
             PAYLINES: [
-                [0, 1, 2, 3, 4],
-                [5, 6, 7, 8, 9],
-                [10,11,12,13,14],
+                [0, 1, 2],   // top row
+                [3, 4, 5],   // middle row
+                [6, 7, 8],   // bottom row
+                [0, 4, 8],   // diagonal top-left → bottom-right
+                [2, 4, 6],   // diagonal top-right → bottom-left
+            ],
+
+            // Columns (for reel-stop animation left→right)
+            COLS: [
+                [0, 3, 6],   // left reel
+                [1, 4, 7],   // centre reel
+                [2, 5, 8],   // right reel
             ],
 
             // ── State ────────────────────────────────────────────────────────────
             isSpinning:    false,
             betAmt:        10,
-            phase:         'base',   // 'base' | 'holdSpin'
-            grid:          [],       // 15 cell objects: { type, value, locked }
+            phase:         'base',   // 'base' | 'feature'
+            grid:          [],       // 9 cells: { type, value, locked }
             respinCount:   0,
-            totalCoinMult: 0,        // accumulated mult from all coins during H&S
+            totalCoinMult: 0,
             autoplay: { active: false, remaining: 0, paused: 0 },
             DOM: {},
+
+            // ── Utility ──────────────────────────────────────────────────────────
+            sleep: ms => new Promise(r => setTimeout(r, ms)),
 
             // ── Init ─────────────────────────────────────────────────────────────
             init() {
                 this.DOM = {
                     grid:            document.getElementById('hs-grid'),
+                    wrapper:         document.getElementById('hs-grid-wrapper'),
                     spinBtn:         document.getElementById('btn-hs-spin'),
                     betInput:        document.getElementById('hs-bet'),
                     status:          document.getElementById('hs-status'),
@@ -494,11 +548,11 @@
                 this.DOM.betInput.addEventListener('input', () => this.updateJackpotDisplay());
             },
 
-            // ── Grid helpers ─────────────────────────────────────────────────────
+            // ── Grid management ──────────────────────────────────────────────────
             buildGrid() {
                 this.DOM.grid.innerHTML = '';
                 this.grid = [];
-                for (let i = 0; i < 15; i++) {
+                for (let i = 0; i < 9; i++) {
                     const el = document.createElement('div');
                     el.id        = `hs-cell-${i}`;
                     el.className = 'hs-cell';
@@ -507,7 +561,7 @@
                 }
             },
 
-            renderCell(i, data, animate = false) {
+            renderCell(i, data) {
                 const el = document.getElementById(`hs-cell-${i}`);
                 el.className = 'hs-cell';
                 el.innerHTML = '';
@@ -515,33 +569,40 @@
                 if (data.type === 'symbol') {
                     const sym = this.SYMBOLS[data.value];
                     if (sym.id === 'bar') {
-                        el.innerHTML = `<span style="font-size:1.1rem;font-weight:900;
+                        el.innerHTML = `<span style="font-size:1.2rem;font-weight:900;
                                          color:#fbbf24;letter-spacing:-1px;">BAR</span>`;
                     } else {
-                        el.innerHTML = `<span style="font-size:2.1rem;">${sym.face}</span>`;
+                        el.innerHTML = `<span style="font-size:2.4rem;">${sym.face}</span>`;
                     }
 
                 } else if (data.type === 'coin') {
                     const v    = data.value;
                     const isJP = typeof v === 'string';
-                    el.classList.add(isJP ? `jp-${v.toLowerCase()}-cell` : 'coin-cell');
+
+                    if (data.locked) {
+                        // Feature coin — glowing
+                        el.classList.add(isJP ? `jp-${v.toLowerCase()}-cell` : 'coin-locked');
+                    } else {
+                        // Base-game scatter coin
+                        el.classList.add('coin-scatter');
+                    }
+
                     if (isJP) {
-                        el.innerHTML = `<span style="font-size:1.6rem;">🪙</span>
+                        el.innerHTML = `<span style="font-size:1.8rem;">🪙</span>
                                         <span class="jp-name-label">${v}</span>`;
                     } else {
-                        el.innerHTML = `<span style="font-size:1.6rem;">🪙</span>
+                        el.innerHTML = `<span style="font-size:1.8rem;">🪙</span>
                                         <span class="coin-val-label">${v}×</span>`;
                     }
-                    if (animate) el.classList.add('coin-land');
 
                 } else if (data.type === 'respin') {
                     el.classList.add('respin-eligible');
                 }
-                // type 'empty' → leave plain
+                // 'empty' → plain dark cell
             },
 
             renderAll() {
-                for (let i = 0; i < 15; i++) this.renderCell(i, this.grid[i]);
+                for (let i = 0; i < 9; i++) this.renderCell(i, this.grid[i]);
             },
 
             setStatus(html) { this.DOM.status.innerHTML = html; },
@@ -580,7 +641,7 @@
             },
 
             // ── Base Spin ────────────────────────────────────────────────────────
-            spin() {
+            async spin() {
                 if (this.isSpinning) return;
                 const bet = parseFloat(this.DOM.betInput.value);
                 if (isNaN(bet) || bet <= 0 || bet > Platform.balance)
@@ -592,39 +653,78 @@
                 Platform.adjustBalance(-bet);
                 this.DOM.spinBtn.disabled  = true;
                 this.DOM.betInput.disabled = true;
-                this.setStatus('<span>Spinning…</span>');
+                this.setStatus('<span style="color:var(--text-muted)">Spinning…</span>');
 
-                // Animate all cells for 650 ms then resolve
-                const syms  = this.SYMBOLS.map(s => s.face);
-                const cells = document.querySelectorAll('#hs-grid .hs-cell');
-                cells.forEach(c => { c.className = 'hs-cell is-spinning'; c.innerHTML = ''; });
+                // Clear any lingering win-glow classes
+                document.querySelectorAll('#hs-grid .hs-cell').forEach(el => {
+                    el.classList.remove('win-glow', 'coin-bounce');
+                });
 
+                await this.doReelSpin();
+                this.resolveBase();
+            },
+
+            // Reel-stop animation: columns stop left → right
+            async doReelSpin() {
+                const allFaces = [...this.SYMBOLS.map(s => s.face), '🪙'];
+
+                // Start all cells spinning
+                for (let i = 0; i < 9; i++) {
+                    const el = document.getElementById(`hs-cell-${i}`);
+                    el.className  = 'hs-cell is-spinning';
+                    el.innerHTML  = '';
+                    el._stopped   = false;
+                }
+
+                // Generate target grid now
+                for (let i = 0; i < 9; i++) this.grid[i] = this.pickCell();
+
+                // Cycle random symbols while spinning
                 const tick = setInterval(() => {
-                    cells.forEach(c => {
-                        const s = syms[Math.floor(Math.random() * syms.length)];
-                        c.innerHTML = (s === 'BAR')
-                            ? `<span style="font-size:1.1rem;font-weight:900;color:#fbbf24;letter-spacing:-1px;">BAR</span>`
-                            : `<span style="font-size:2.1rem;">${s}</span>`;
-                    });
+                    for (let i = 0; i < 9; i++) {
+                        const el = document.getElementById(`hs-cell-${i}`);
+                        if (el._stopped) continue;
+                        const f = allFaces[Math.floor(Math.random() * allFaces.length)];
+                        el.innerHTML = (f === 'BAR')
+                            ? `<span style="font-size:1.2rem;font-weight:900;color:#fbbf24;">BAR</span>`
+                            : `<span style="font-size:2.4rem;">${f}</span>`;
+                    }
                 }, 80);
 
-                setTimeout(() => {
-                    clearInterval(tick);
-                    this.resolveBase();
-                }, 650);
+                // Stop each reel left → right with a 280ms gap
+                for (const col of this.COLS) {
+                    await this.sleep(280);
+                    for (const idx of col) {
+                        const el = document.getElementById(`hs-cell-${idx}`);
+                        el._stopped  = true;
+                        el.className = 'hs-cell';
+                        this.renderCell(idx, this.grid[idx]);
+                    }
+                }
+
+                clearInterval(tick);
             },
 
             resolveBase() {
-                for (let i = 0; i < 15; i++) this.grid[i] = this.pickCell();
-                this.renderAll();
+                const coins = this.grid.filter(c => c.type === 'coin');
 
-                const coinCount = this.grid.filter(c => c.type === 'coin').length;
+                if (coins.length >= 3) {
+                    // Flash coin cells before transition to feature
+                    coins.forEach((c, k) => {
+                        const idx = this.grid.indexOf(c);
+                        setTimeout(() => {
+                            document.getElementById(`hs-cell-${idx}`)
+                                    .classList.add('trigger-flash');
+                        }, k * 80);
+                    });
+                    this.setStatus(
+                        `<span class="hs-fire">🔥 ${coins.length} coins!</span>` +
+                        `<span class="hs-gold">Coin Drop Triggered!</span>`
+                    );
+                    setTimeout(() => this.startFeature(), 1400);
 
-                if (coinCount >= 6) {
-                    // Trigger Hold & Spin
-                    setTimeout(() => this.startHoldSpin(), 500);
                 } else {
-                    // Evaluate the 3 horizontal paylines
+                    // Evaluate paylines
                     const mult     = this.evalPaylines();
                     const totalWin = +(mult * this.betAmt).toFixed(2);
 
@@ -634,53 +734,46 @@
                         this.setStatus(`<span class="hs-green">🏆 Won $${totalWin.toFixed(2)}!</span>`);
                     } else {
                         Platform.recordGame('holdSpin', this.betAmt, 0);
-                        this.setStatus(`<span style="color:var(--text-muted)">No win — spin again</span>`);
+                        this.setStatus(`<span style="color:var(--text-muted)">No win — try again</span>`);
                     }
-
-                    this.finishBase(totalWin > 0 && totalWin >= this.betAmt * 8);
+                    this.finishBase(totalWin >= this.betAmt * 8);
                 }
             },
 
-            // ── Paylines ─────────────────────────────────────────────────────────
+            // ── Payline check: all 3 cells in each payline the same symbol ───────
             evalPaylines() {
                 let totalMult = 0;
                 const winSet  = new Set();
 
                 for (const line of this.PAYLINES) {
-                    const g0 = this.grid[line[0]];
-                    if (g0.type !== 'symbol') continue;
-                    const symId = g0.value;
-                    let count   = 1;
-                    for (let k = 1; k < 5; k++) {
-                        const g = this.grid[line[k]];
-                        if (g.type === 'symbol' && g.value === symId) count++;
-                        else break;
-                    }
-                    if (count < 3) continue;
-                    totalMult += this.SYMBOLS[symId].pays[count];
-                    for (let k = 0; k < count; k++) winSet.add(line[k]);
+                    const cells = line.map(i => this.grid[i]);
+                    if (cells.some(c => c.type !== 'symbol')) continue;
+                    if (cells[0].value !== cells[1].value || cells[1].value !== cells[2].value) continue;
+
+                    totalMult += this.SYMBOLS[cells[0].value].pay;
+                    line.forEach(i => winSet.add(i));
                 }
 
-                winSet.forEach(idx => {
-                    document.getElementById(`hs-cell-${idx}`).classList.add('win-glow');
+                winSet.forEach(i => {
+                    document.getElementById(`hs-cell-${i}`).classList.add('win-glow');
                 });
                 return totalMult;
             },
 
-            // ── Hold & Spin ──────────────────────────────────────────────────────
-            startHoldSpin() {
-                this.phase         = 'holdSpin';
+            // ── Coin Drop Feature ────────────────────────────────────────────────
+            async startFeature() {
+                this.phase         = 'feature';
                 this.respinCount   = 3;
                 this.totalCoinMult = 0;
 
-                // Pause autoplay — H&S requires manual collect
+                // Pause autoplay during feature (requires manual Collect)
                 if (this.autoplay.active) {
                     this.autoplay.paused = this.autoplay.remaining;
                     this.stopAutoplay();
                 }
 
-                // Lock coins, mark everything else as respin-eligible
-                for (let i = 0; i < 15; i++) {
+                // Lock landed coins, mark everything else as respin-eligible
+                for (let i = 0; i < 9; i++) {
                     if (this.grid[i].type === 'coin') {
                         this.grid[i].locked  = true;
                         this.totalCoinMult  += this.coinMult(this.grid[i].value);
@@ -689,67 +782,126 @@
                     }
                 }
                 this.renderAll();
-                this.updateHSStatus();
-                setTimeout(() => this.doRespin(), 700);
+                this.updateFeatureStatus();
+
+                await this.sleep(700);
+                await this.doRespin();
             },
 
-            doRespin() {
-                if (this.respinCount <= 0) { this.endHoldSpin(); return; }
+            async doRespin() {
+                if (this.respinCount <= 0) { this.endFeature(); return; }
 
-                const unlocked = [];
-                for (let i = 0; i < 15; i++) {
-                    if (!this.grid[i].locked) unlocked.push(i);
-                }
-                if (unlocked.length === 0) { this.endHoldSpin(); return; }
+                const emptyIdx = this.grid
+                    .map((c, i) => i)
+                    .filter(i => !this.grid[i].locked);
 
-                // Flash unlocked cells
-                unlocked.forEach(i => {
-                    const el = document.getElementById(`hs-cell-${i}`);
-                    el.className = 'hs-cell respin-eligible is-spinning';
-                    el.innerHTML = '';
+                if (emptyIdx.length === 0) { this.endFeature(); return; }
+
+                // Brief flash to signal the respin is about to drop
+                emptyIdx.forEach(i => {
+                    document.getElementById(`hs-cell-${i}`).classList.add('respin-flash');
+                });
+                await this.sleep(500);
+                emptyIdx.forEach(i => {
+                    document.getElementById(`hs-cell-${i}`).classList.remove('respin-flash');
                 });
 
-                setTimeout(() => {
-                    this.respinCount--;
-                    let newCoins = 0;
-
-                    for (const i of unlocked) {
-                        if (Math.random() < 0.20) {   // 20% coin chance per empty cell
-                            const v = this.pickCoinValue();
-                            this.grid[i] = { type: 'coin', value: v, locked: true };
-                            this.totalCoinMult += this.coinMult(v);
-                            newCoins++;
-                            this.renderCell(i, this.grid[i], true);
-                        } else {
-                            this.grid[i] = { type: 'respin', value: null, locked: false };
-                            this.renderCell(i, this.grid[i]);
-                        }
+                // Determine which empty cells land coins this respin
+                this.respinCount--;
+                const newCoinIdx = [];
+                for (const i of emptyIdx) {
+                    if (Math.random() < 0.28) {     // 28% coin chance per empty cell
+                        const v = this.pickCoinValue();
+                        this.grid[i] = { type: 'coin', value: v, locked: true };
+                        this.totalCoinMult += this.coinMult(v);
+                        newCoinIdx.push(i);
+                    } else {
+                        this.grid[i] = { type: 'respin', value: null, locked: false };
                     }
+                }
 
-                    // Any new coin resets counter to 3
-                    if (newCoins > 0) this.respinCount = 3;
-                    this.updateHSStatus();
+                // Any new coin resets the respin counter
+                if (newCoinIdx.length > 0) this.respinCount = 3;
 
-                    setTimeout(() => this.doRespin(), newCoins > 0 ? 800 : 550);
-                }, 500);
+                // ── Drop coins one by one with a short stagger ──────────────────
+                // Use Promise.all with staggered starts so they overlap visually
+                const dropTasks = newCoinIdx.map((cellIdx, k) =>
+                    this.sleep(k * 160).then(() => this.dropCoin(cellIdx))
+                );
+                await Promise.all(dropTasks);
+
+                // Re-render any non-coin cells (stays as respin-eligible)
+                for (const i of emptyIdx) {
+                    if (!this.grid[i].locked) this.renderCell(i, this.grid[i]);
+                }
+
+                this.updateFeatureStatus();
+                await this.sleep(450);
+                await this.doRespin();
             },
 
-            updateHSStatus() {
+            // Animate a single coin dropping from above the grid into its cell
+            dropCoin(cellIndex) {
+                return new Promise(resolve => {
+                    const wrapper  = this.DOM.wrapper;
+                    const cellEl   = document.getElementById(`hs-cell-${cellIndex}`);
+
+                    const wRect = wrapper.getBoundingClientRect();
+                    const cRect = cellEl.getBoundingClientRect();
+
+                    // Centre of the target cell, relative to wrapper top-left
+                    const cx = cRect.left - wRect.left + cRect.width  / 2;
+                    const cy = cRect.top  - wRect.top  + cRect.height / 2;
+
+                    // Start 80px above the wrapper (will appear from above the grid)
+                    const startY = -80;
+
+                    const dropper = document.createElement('div');
+                    dropper.className = 'coin-dropper';
+                    dropper.style.left = `${cx}px`;
+                    dropper.style.top  = `${startY}px`;
+                    dropper.textContent = '🪙';
+                    wrapper.appendChild(dropper);
+
+                    // Fall with gravity (ease-in = accelerates downward)
+                    const anim = dropper.animate(
+                        [
+                            { top: `${startY}px`, opacity: 0   },
+                            { top: `${startY + 18}px`, opacity: 1, offset: 0.06 },
+                            { top: `${cy}px`,     opacity: 1   },
+                        ],
+                        { duration: 480, easing: 'ease-in', fill: 'forwards' }
+                    );
+
+                    anim.onfinish = () => {
+                        dropper.remove();
+                        // Render the coin cell
+                        this.renderCell(cellIndex, this.grid[cellIndex]);
+                        // Landing bounce on the cell
+                        cellEl.classList.add('coin-bounce');
+                        setTimeout(() => {
+                            cellEl.classList.remove('coin-bounce');
+                            resolve();
+                        }, 260);
+                    };
+                });
+            },
+
+            updateFeatureStatus() {
                 const cur = (this.totalCoinMult * this.betAmt).toFixed(2);
                 this.setStatus(
-                    `<span class="hs-fire">🔥 HOLD &amp; SPIN</span>` +
+                    `<span class="hs-fire">🔥 COIN DROP</span>` +
                     `<span class="hs-gold">Respins: <strong>${this.respinCount}</strong></span>` +
                     `<span class="hs-green">+$${cur}</span>`
                 );
             },
 
-            endHoldSpin() {
+            endFeature() {
                 const winAmt = +(this.totalCoinMult * this.betAmt).toFixed(2);
                 Platform.adjustBalance(winAmt);
                 Platform.recordGame('holdSpin', this.betAmt, winAmt);
 
-                // Choose splash headline
-                let label = '🔥 Hold &amp; Spin Complete!';
+                let label = '🔥 Coin Drop Complete!';
                 if (this.totalCoinMult >= this.JP_MULTS.GRAND)      label = '🎉 GRAND JACKPOT! 🎉';
                 else if (this.totalCoinMult >= this.JP_MULTS.MAJOR)  label = '🎉 MAJOR JACKPOT!';
                 else if (this.totalCoinMult >= this.JP_MULTS.MINOR)  label = '🏆 Big Win!';
@@ -774,13 +926,13 @@
                     this.autoplay.active    = true;
                     this.autoplay.remaining = rem;
                     this.DOM.autospinBtn.classList.add('active');
-                    this.DOM.autospinBtn.innerText   = '■ Stop';
+                    this.DOM.autospinBtn.innerText     = '■ Stop';
                     this.DOM.autospinCounter.innerText = `${rem} left`;
                     setTimeout(() => this.nextAutoSpin(), 500);
                 }
             },
 
-            // Called after base-game outcomes (no splash)
+            // Called after base-game outcomes (no splash needed)
             finishBase(isBigWin) {
                 this.isSpinning        = false;
                 this.DOM.spinBtn.disabled  = false;
@@ -796,7 +948,7 @@
                 if (this.autoplay.active) {
                     this.stopAutoplay();
                 } else {
-                    if (this.isSpinning || this.phase === 'holdSpin') return;
+                    if (this.isSpinning || this.phase === 'feature') return;
                     const count = parseInt(this.DOM.autospinCount.value);
                     this.autoplay.active    = true;
                     this.autoplay.remaining = count;
@@ -810,7 +962,7 @@
                 this.autoplay.active    = false;
                 this.autoplay.remaining = 0;
                 this.DOM.autospinBtn.classList.remove('active');
-                this.DOM.autospinBtn.innerText   = '⚡ Autoplay';
+                this.DOM.autospinBtn.innerText     = '⚡ Autoplay';
                 this.DOM.autospinCounter.innerText = '';
             },
 
@@ -829,7 +981,7 @@
             },
         };
 
-        document.addEventListener('platform:ready', () => HoldSpinGame.init());
+        document.addEventListener('platform:ready', () => HSGame.init());
     </script>
 </body>
 </html>
