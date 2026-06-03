@@ -322,6 +322,56 @@
             50%     { transform: scale(1.15);
                       box-shadow: 0 0 30px rgba(251,191,36,1); }
         }
+
+        /* ── Bonus Buy button ────────────────────────────────────────── */
+        .btn-bonus-buy {
+            width: 100%;
+            background: linear-gradient(135deg, #92400e, #d97706);
+            color: #fef3c7;
+            border: 1px solid #fbbf24;
+            padding: 10px 14px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            border-radius: 9px;
+            cursor: pointer;
+            transition: all 0.2s;
+            letter-spacing: 0.4px;
+            box-shadow: 0 0 14px rgba(217,119,6,0.25);
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+        }
+        .btn-bonus-buy:hover:not(:disabled) {
+            filter: brightness(1.12);
+            transform: translateY(-1px);
+            box-shadow: 0 0 24px rgba(251,191,36,0.45);
+        }
+        .btn-bonus-buy:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .bonus-buy-cost {
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: #fbbf24;
+            opacity: 0.9;
+        }
+
+        /* ── Respin reset flash in status ────────────────────────────── */
+        .hs-reset-flash {
+            color: #fbbf24;
+            font-size: 1.1rem;
+            animation: resetPop 0.4s ease;
+        }
+        @keyframes resetPop {
+            0%   { transform: scale(0.7); opacity: 0; }
+            60%  { transform: scale(1.2); }
+            100% { transform: scale(1);   opacity: 1; }
+        }
     </style>
 </head>
 <body>
@@ -365,6 +415,10 @@
                                        value="10" min="1" step="1">
                             </div>
                             <button class="btn-action" id="btn-hs-spin">Spin</button>
+                            <button class="btn-bonus-buy" id="btn-hs-bonus-buy">
+                                🎰 Bonus Buy
+                                <span class="bonus-buy-cost" id="hs-bonus-cost">33× = $330.00</span>
+                            </button>
                         </div>
 
                         <!-- Autospin -->
@@ -491,6 +545,7 @@
                 { v: 'GRAND',w: 0.05 },
             ],
             JP_MULTS: { MINI: 10, MINOR: 25, MAJOR: 100, GRAND: 500 },
+            BONUS_BUY_MULT: 33,   // 33× bet → ~94% RTP on bonus buy
 
             // 5 paylines on the 3×3 grid (cells 0-8, row-major order)
             // Grid layout:  [0][1][2]
@@ -514,6 +569,7 @@
             // ── State ────────────────────────────────────────────────────────────
             isSpinning:    false,
             betAmt:        10,
+            actualWager:   0,        // cost paid (differs from betAmt during bonus buy)
             phase:         'base',   // 'base' | 'feature'
             grid:          [],       // 9 cells: { type, value, locked }
             respinCount:   0,
@@ -530,6 +586,8 @@
                     grid:            document.getElementById('hs-grid'),
                     wrapper:         document.getElementById('hs-grid-wrapper'),
                     spinBtn:         document.getElementById('btn-hs-spin'),
+                    bonusBuyBtn:     document.getElementById('btn-hs-bonus-buy'),
+                    bonusBuyCost:    document.getElementById('hs-bonus-cost'),
                     betInput:        document.getElementById('hs-bet'),
                     status:          document.getElementById('hs-status'),
                     splash:          document.getElementById('hs-win-splash'),
@@ -543,9 +601,13 @@
                 this.buildGrid();
                 this.updateJackpotDisplay();
 
-                this.DOM.spinBtn.onclick     = () => this.spin();
-                this.DOM.autospinBtn.onclick = () => this.toggleAutoplay();
-                this.DOM.betInput.addEventListener('input', () => this.updateJackpotDisplay());
+                this.DOM.spinBtn.onclick       = () => this.spin();
+                this.DOM.bonusBuyBtn.onclick   = () => this.bonusBuy();
+                this.DOM.autospinBtn.onclick   = () => this.toggleAutoplay();
+                this.DOM.betInput.addEventListener('input', () => {
+                    this.updateJackpotDisplay();
+                    this.updateBonusBuyCost();
+                });
             },
 
             // ── Grid management ──────────────────────────────────────────────────
@@ -613,6 +675,13 @@
                 document.getElementById('jp-major-val').textContent = `$${(this.JP_MULTS.MAJOR * bet).toFixed(2)}`;
                 document.getElementById('jp-minor-val').textContent = `$${(this.JP_MULTS.MINOR * bet).toFixed(2)}`;
                 document.getElementById('jp-mini-val').textContent  = `$${(this.JP_MULTS.MINI  * bet).toFixed(2)}`;
+                this.updateBonusBuyCost();
+            },
+
+            updateBonusBuyCost() {
+                const bet  = Math.max(1, parseFloat(this.DOM.betInput.value) || 10);
+                const cost = (bet * this.BONUS_BUY_MULT).toFixed(2);
+                this.DOM.bonusBuyCost.textContent = `${this.BONUS_BUY_MULT}× = $${cost}`;
             },
 
             // ── RNG ──────────────────────────────────────────────────────────────
@@ -649,10 +718,12 @@
 
                 this.isSpinning = true;
                 this.betAmt     = bet;
+                this.actualWager = bet;
                 this.updateJackpotDisplay();
                 Platform.adjustBalance(-bet);
-                this.DOM.spinBtn.disabled  = true;
-                this.DOM.betInput.disabled = true;
+                this.DOM.spinBtn.disabled      = true;
+                this.DOM.bonusBuyBtn.disabled  = true;
+                this.DOM.betInput.disabled     = true;
                 this.setStatus('<span style="color:var(--text-muted)">Spinning…</span>');
 
                 // Clear any lingering win-glow classes
@@ -760,6 +831,71 @@
                 return totalMult;
             },
 
+            // ── Bonus Buy ────────────────────────────────────────────────────────
+            bonusBuy() {
+                if (this.isSpinning || this.phase === 'feature') return;
+                const bet = parseFloat(this.DOM.betInput.value);
+                if (isNaN(bet) || bet <= 0)
+                    return Platform.showAlert('Set a valid bet amount first.', 'Wager Error');
+
+                const cost = +(bet * this.BONUS_BUY_MULT).toFixed(2);
+                if (cost > Platform.balance)
+                    return Platform.showAlert(`Insufficient balance. Bonus Buy costs $${cost.toFixed(2)}.`, 'Wager Error');
+
+                Platform.showConfirm(
+                    `Buy the Coin Drop bonus directly for $${cost.toFixed(2)} (${this.BONUS_BUY_MULT}× your $${bet.toFixed(2)} bet)?`,
+                    () => this._executeBonusBuy(bet, cost)
+                );
+            },
+
+            async _executeBonusBuy(bet, cost) {
+                this.isSpinning    = true;
+                this.betAmt        = bet;
+                this.actualWager   = cost;
+                this.DOM.spinBtn.disabled      = true;
+                this.DOM.bonusBuyBtn.disabled  = true;
+                this.DOM.betInput.disabled     = true;
+
+                Platform.adjustBalance(-cost);
+                this.updateJackpotDisplay();
+
+                // Build a fresh grid — 3 coins in random positions, rest regular symbols
+                const positions = Array.from({ length: 9 }, (_, i) => i);
+                for (let i = positions.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [positions[i], positions[j]] = [positions[j], positions[i]];
+                }
+                const coinSet = new Set(positions.slice(0, 3));
+
+                for (let i = 0; i < 9; i++) {
+                    if (coinSet.has(i)) {
+                        this.grid[i] = { type: 'coin', value: this.pickCoinValue(), locked: false };
+                    } else {
+                        this.grid[i] = { type: 'symbol', value: Math.floor(Math.random() * this.SYMBOLS.length), locked: false };
+                    }
+                }
+
+                // Clear any leftover glow classes then render
+                document.querySelectorAll('#hs-grid .hs-cell').forEach(el => {
+                    el.classList.remove('win-glow', 'coin-bounce', 'trigger-flash');
+                });
+                this.renderAll();
+
+                // Flash the 3 starting coins
+                [...coinSet].forEach((idx, k) => {
+                    setTimeout(() => {
+                        document.getElementById(`hs-cell-${idx}`).classList.add('trigger-flash');
+                    }, k * 80);
+                });
+
+                this.setStatus(
+                    `<span class="hs-fire">🎰 Bonus Buy!</span>` +
+                    `<span class="hs-gold">Coin Drop Triggered!</span>`
+                );
+                await this.sleep(1400);
+                this.startFeature();
+            },
+
             // ── Coin Drop Feature ────────────────────────────────────────────────
             async startFeature() {
                 this.phase         = 'feature';
@@ -820,8 +956,17 @@
                     }
                 }
 
-                // Any new coin resets the respin counter
-                if (newCoinIdx.length > 0) this.respinCount = 3;
+                // Any new coin resets the respin counter to 3
+                if (newCoinIdx.length > 0) {
+                    this.respinCount = 3;
+                    // Brief visual flash so the player sees the reset
+                    this.setStatus(
+                        `<span class="hs-fire">🔥 COIN DROP</span>` +
+                        `<span class="hs-reset-flash">🔄 +3 Spins!</span>` +
+                        `<span class="hs-green">+$${(this.totalCoinMult * this.betAmt).toFixed(2)}</span>`
+                    );
+                    await this.sleep(600);
+                }
 
                 // ── Drop coins one by one with a short stagger ──────────────────
                 // Use Promise.all with staggered starts so they overlap visually
@@ -899,7 +1044,10 @@
             endFeature() {
                 const winAmt = +(this.totalCoinMult * this.betAmt).toFixed(2);
                 Platform.adjustBalance(winAmt);
-                Platform.recordGame('holdSpin', this.betAmt, winAmt);
+                // Record wager as the actual amount paid (bonus buy costs more than betAmt)
+                const wager = this.actualWager > 0 ? this.actualWager : this.betAmt;
+                this.actualWager = 0;
+                Platform.recordGame('holdSpin', wager, winAmt);
 
                 let label = '🔥 Coin Drop Complete!';
                 if (this.totalCoinMult >= this.JP_MULTS.GRAND)      label = '🎉 GRAND JACKPOT! 🎉';
@@ -913,10 +1061,11 @@
 
             closeSplash() {
                 this.DOM.splash.classList.remove('visible');
-                this.phase             = 'base';
-                this.isSpinning        = false;
-                this.DOM.spinBtn.disabled  = false;
-                this.DOM.betInput.disabled = false;
+                this.phase                     = 'base';
+                this.isSpinning                = false;
+                this.DOM.spinBtn.disabled      = false;
+                this.DOM.bonusBuyBtn.disabled  = false;
+                this.DOM.betInput.disabled     = false;
                 this.setStatus(`<span style="color:var(--text-muted)">Ready to spin!</span>`);
 
                 // Resume autoplay if it was paused for the feature
@@ -934,9 +1083,10 @@
 
             // Called after base-game outcomes (no splash needed)
             finishBase(isBigWin) {
-                this.isSpinning        = false;
-                this.DOM.spinBtn.disabled  = false;
-                this.DOM.betInput.disabled = false;
+                this.isSpinning                = false;
+                this.DOM.spinBtn.disabled      = false;
+                this.DOM.bonusBuyBtn.disabled  = false;
+                this.DOM.betInput.disabled     = false;
 
                 if (this.autoplay.active) {
                     setTimeout(() => this.nextAutoSpin(), isBigWin ? 1800 : 700);
