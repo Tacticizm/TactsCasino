@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Hold &amp; Spin - Casino</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* ── Hold & Spin Specific Styles ────────────────────────────────── */
+
+        .hs-layout {
+            display: flex;
+            gap: 24px;
+            align-items: flex-start;
+        }
+
+        /* ── Left sidebar ─────────────────────────────────────────────── */
+        .hs-sidebar {
+            width: 220px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .jackpot-strip {
+            background: var(--bg-base);
+            border: 1px solid var(--bg-hover);
+            border-radius: 10px;
+            padding: 12px 14px;
+        }
+        .jackpot-strip-title {
+            font-size: 0.68rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 8px;
+        }
+        .jackpot-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        .jackpot-row:last-child { margin-bottom: 0; }
+        .jp-grand-row { background: linear-gradient(90deg, #7c1d1d, #dc2626); color: #fbbf24; }
+        .jp-major-row { background: linear-gradient(90deg, #431407, #c2410c); color: #fed7aa; }
+        .jp-minor-row { background: linear-gradient(90deg, #422006, #d97706); color: #fef3c7; }
+        .jp-mini-row  { background: linear-gradient(90deg, #1c1917, #57534e); color: #fde68a; }
+
+        .hs-controls {
+            background: var(--bg-base);
+            border: 1px solid var(--bg-hover);
+            border-radius: 10px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .hs-paytable {
+            background: var(--bg-base);
+            border: 1px solid var(--bg-hover);
+            border-radius: 10px;
+            padding: 12px 14px;
+        }
+        .hs-paytable-title {
+            font-size: 0.68rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 8px;
+        }
+        .pay-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 3px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        .pay-row:last-child { border-bottom: none; }
+        .pay-sym     { font-size: 1rem; line-height: 1.3; }
+        .pay-sym-bar { font-size: 0.82rem; font-weight: 900; color: #fbbf24; }
+        .pay-vals    { color: var(--text-muted); font-size: 0.72rem; }
+
+        /* ── Game area ────────────────────────────────────────────────── */
+        .hs-game-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .hs-status {
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.05rem;
+            font-weight: 700;
+            gap: 18px;
+            color: var(--text-muted);
+        }
+        .hs-fire  { color: #f97316; }
+        .hs-gold  { color: #fbbf24; }
+        .hs-green { color: var(--success); }
+
+        /* ── Grid ─────────────────────────────────────────────────────── */
+        .hs-grid-wrapper {
+            position: relative;
+        }
+
+        .hs-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 90px);
+            grid-template-rows:    repeat(3, 82px);
+            gap: 8px;
+            background: #0c0e13;
+            padding: 14px;
+            border-radius: 14px;
+            border: 2px solid #2a1a0e;
+            box-shadow: 0 0 60px rgba(220,38,38,0.12),
+                        inset 0 0 50px rgba(0,0,0,0.55);
+        }
+
+        .hs-cell {
+            width: 90px;
+            height: 82px;
+            background: linear-gradient(155deg, #1a1713, #261c14);
+            border-radius: 8px;
+            border: 1px solid #3a2818;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 3px;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.1s;
+            user-select: none;
+        }
+
+        .hs-cell.is-spinning {
+            animation: cellFlicker 0.09s steps(1) infinite;
+        }
+        @keyframes cellFlicker {
+            0%   { filter: brightness(0.45); }
+            50%  { filter: brightness(1.15); }
+            100% { filter: brightness(0.45); }
+        }
+
+        .hs-cell.respin-eligible {
+            background: linear-gradient(155deg, #111827, #1e2535);
+            border: 1px dashed #374151;
+            opacity: 0.6;
+        }
+
+        /* ── Coin cell ────────────────────────────────────────────────── */
+        .hs-cell.coin-cell {
+            background: linear-gradient(155deg, #3d1a00, #6b2e00);
+            border: 2px solid #d97706;
+            animation: coinPulse 2s ease-in-out infinite alternate;
+        }
+        @keyframes coinPulse {
+            from { box-shadow: 0 0 10px rgba(217,119,6,0.35); }
+            to   { box-shadow: 0 0 22px rgba(251,191,36,0.75),
+                               inset 0 0 12px rgba(251,191,36,0.12); }
+        }
+        .coin-val-label {
+            font-size: 0.72rem;
+            font-weight: 800;
+            color: #fbbf24;
+            text-shadow: 0 0 6px rgba(251,191,36,0.9);
+        }
+
+        /* ── Jackpot cells ────────────────────────────────────────────── */
+        .hs-cell.jp-mini-cell {
+            background: linear-gradient(155deg, #1c1917, #3b3229);
+            border: 2px solid #fde68a;
+        }
+        .hs-cell.jp-minor-cell {
+            background: linear-gradient(155deg, #1c0a00, #7c3000);
+            border: 2px solid #fbbf24;
+            box-shadow: 0 0 14px rgba(251,191,36,0.35);
+        }
+        .hs-cell.jp-major-cell {
+            background: linear-gradient(155deg, #1c0a00, #9a3300);
+            border: 2px solid #f97316;
+            box-shadow: 0 0 20px rgba(249,115,22,0.45);
+        }
+        .hs-cell.jp-grand-cell {
+            background: linear-gradient(155deg, #3b0000, #8b1a1a);
+            border: 2px solid #fca5a5;
+            animation: grandFlame 1s ease-in-out infinite alternate;
+        }
+        @keyframes grandFlame {
+            from { box-shadow: 0 0 20px rgba(220,38,38,0.5); }
+            to   { box-shadow: 0 0 40px rgba(251,191,36,0.95); }
+        }
+        .jp-name-label {
+            font-size: 0.62rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+        .jp-mini-cell  .jp-name-label { color: #fde68a; }
+        .jp-minor-cell .jp-name-label { color: #fbbf24; }
+        .jp-major-cell .jp-name-label { color: #fb923c; }
+        .jp-grand-cell .jp-name-label { color: #fca5a5; }
+
+        /* ── Win glow ────────────────────────────────────────────────── */
+        .hs-cell.win-glow {
+            border-color: var(--success) !important;
+            box-shadow: 0 0 18px rgba(34,197,94,0.7),
+                        inset 0 0 10px rgba(34,197,94,0.15) !important;
+            animation: winPop 0.5s ease 2;
+        }
+        @keyframes winPop {
+            0%,100% { transform: scale(1);    }
+            50%     { transform: scale(1.07); }
+        }
+
+        /* Coin landing bounce */
+        .hs-cell.coin-land {
+            animation: landBounce 0.5s ease-out,
+                       coinPulse 2s ease-in-out 0.5s infinite alternate;
+        }
+        @keyframes landBounce {
+            0%   { transform: scale(1.5); opacity: 0; }
+            65%  { transform: scale(0.9); }
+            100% { transform: scale(1);   opacity: 1; }
+        }
+
+        /* ── Win Splash ──────────────────────────────────────────────── */
+        .hs-win-splash {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.88);
+            border-radius: 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 30;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        .hs-win-splash.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .splash-fire-label {
+            font-size: 0.9rem;
+            color: #f97316;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            font-weight: 800;
+            margin-bottom: 6px;
+        }
+        .splash-win-amt {
+            font-size: 3.2rem;
+            font-weight: 900;
+            color: #fbbf24;
+            text-shadow: 0 0 40px rgba(251,191,36,0.85);
+            line-height: 1.1;
+        }
+        .splash-collect-btn {
+            margin-top: 20px;
+            padding: 10px 32px;
+            background: var(--success);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: filter 0.2s;
+        }
+        .splash-collect-btn:hover { filter: brightness(1.15); }
+    </style>
+</head>
+<body>
+    <div class="sidebar" id="sidebar-container"></div>
+    <div class="main-content">
+        <div class="top-bar" id="topbar-container"></div>
+        <div class="game-stage">
+            <div class="game-view" id="view-holdspins" style="max-width:920px;">
+
+                <div class="game-header" style="margin-bottom:18px;">
+                    <h2>🔥 Hold &amp; Spin</h2>
+                </div>
+
+                <div class="hs-layout">
+
+                    <!-- ── Left sidebar ──────────────────────────────── -->
+                    <div class="hs-sidebar">
+
+                        <!-- Jackpots -->
+                        <div class="jackpot-strip">
+                            <div class="jackpot-strip-title">Jackpots</div>
+                            <div class="jackpot-row jp-grand-row">
+                                <span>GRAND</span><span id="jp-grand-val">—</span>
+                            </div>
+                            <div class="jackpot-row jp-major-row">
+                                <span>MAJOR</span><span id="jp-major-val">—</span>
+                            </div>
+                            <div class="jackpot-row jp-minor-row">
+                                <span>MINOR</span><span id="jp-minor-val">—</span>
+                            </div>
+                            <div class="jackpot-row jp-mini-row">
+                                <span>MINI</span><span id="jp-mini-val">—</span>
+                            </div>
+                        </div>
+
+                        <!-- Bet & Spin -->
+                        <div class="hs-controls">
+                            <div class="control-group">
+                                <label>Bet Amount</label>
+                                <input type="number" id="hs-bet" class="input-dark"
+                                       value="10" min="1" step="1">
+                            </div>
+                            <button class="btn-action" id="btn-hs-spin">Spin</button>
+                        </div>
+
+                        <!-- Autospin -->
+                        <div class="autospin-bar">
+                            <select id="hs-autospin-count">
+                                <option value="10">10 Spins</option>
+                                <option value="25">25 Spins</option>
+                                <option value="50" selected>50 Spins</option>
+                                <option value="100">100 Spins</option>
+                                <option value="500">500 Spins</option>
+                                <option value="1000">1000 Spins</option>
+                            </select>
+                            <button class="btn-autospin" id="hs-btn-autospin">⚡ Autoplay</button>
+                            <span class="autospin-counter" id="hs-autospin-counter"></span>
+                        </div>
+
+                        <!-- Paytable -->
+                        <div class="hs-paytable">
+                            <div class="hs-paytable-title">Line Pays (3 / 4 / 5)</div>
+                            <div class="pay-row">
+                                <span class="pay-sym">7️⃣</span>
+                                <span class="pay-vals">5× / 20× / 50×</span>
+                            </div>
+                            <div class="pay-row">
+                                <span class="pay-sym-bar">BAR</span>
+                                <span class="pay-vals">3× / 10× / 20×</span>
+                            </div>
+                            <div class="pay-row">
+                                <span class="pay-sym">🔔</span>
+                                <span class="pay-vals">2× / 7× / 15×</span>
+                            </div>
+                            <div class="pay-row">
+                                <span class="pay-sym">🍒</span>
+                                <span class="pay-vals">1.5× / 5× / 10×</span>
+                            </div>
+                            <div class="pay-row">
+                                <span class="pay-sym">🍋</span>
+                                <span class="pay-vals">1× / 3× / 8×</span>
+                            </div>
+                            <div class="pay-row">
+                                <span class="pay-sym">🍊</span>
+                                <span class="pay-vals">0.5× / 2× / 6×</span>
+                            </div>
+                            <div class="pay-row" style="margin-top:8px;
+                                 border-top:1px solid rgba(255,255,255,0.07);
+                                 padding-top:7px; border-bottom:none;">
+                                <span style="font-size:0.75rem;color:#f97316;font-weight:700;">
+                                    🪙 6+ coins = Hold &amp; Spin!
+                                </span>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- ── Main game area ─────────────────────────────── -->
+                    <div class="hs-game-area">
+
+                        <div class="hs-status" id="hs-status">
+                            <span>Place your bet and spin!</span>
+                        </div>
+
+                        <div class="hs-grid-wrapper">
+                            <div class="hs-grid" id="hs-grid">
+                                <!-- 15 cells injected by JS -->
+                            </div>
+                            <!-- Win splash (covers grid) -->
+                            <div class="hs-win-splash" id="hs-win-splash">
+                                <div class="splash-fire-label" id="hs-splash-label">
+                                    🔥 Hold &amp; Spin!
+                                </div>
+                                <div class="splash-win-amt" id="hs-splash-amt">$0.00</div>
+                                <button class="splash-collect-btn"
+                                        onclick="HoldSpinGame.closeSplash()">
+                                    Collect
+                                </button>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-init.js"></script>
+    <script src="platform.js"></script>
+    <script>
+        Platform.init('holdSpin');
+
+        // ── Hold & Spin Game ─────────────────────────────────────────────────────
+        const HoldSpinGame = {
+
+            // ── Config ───────────────────────────────────────────────────────────
+            SYMBOLS: [
+                { id: 'seven',  face: '7️⃣',  pays: { 3: 5,   4: 20, 5: 50  } },
+                { id: 'bar',    face: 'BAR', pays: { 3: 3,   4: 10, 5: 20  } },
+                { id: 'bell',   face: '🔔',  pays: { 3: 2,   4: 7,  5: 15  } },
+                { id: 'cherry', face: '🍒',  pays: { 3: 1.5, 4: 5,  5: 10  } },
+                { id: 'lemon',  face: '🍋',  pays: { 3: 1,   4: 3,  5: 8   } },
+                { id: 'orange', face: '🍊',  pays: { 3: 0.5, 4: 2,  5: 6   } },
+            ],
+            // Relative spawn weights per cell (higher = more common)
+            SYM_WEIGHTS: [3, 5, 7, 10, 12, 15],   // seven → orange
+            COIN_WEIGHT: 8,                          // ~13% chance of coin per cell
+
+            // Coin value table — numeric = multiplier × bet; string = jackpot name
+            COIN_TABLE: [
+                { v: 0.5,    w: 30   },
+                { v: 1,      w: 25   },
+                { v: 2,      w: 18   },
+                { v: 3,      w: 10   },
+                { v: 5,      w: 7    },
+                { v: 8,      w: 5    },
+                { v: 10,     w: 3    },
+                { v: 20,     w: 1.5  },
+                { v: 'MINI', w: 1.5  },
+                { v: 'MINOR',w: 0.8  },
+                { v: 'MAJOR',w: 0.3  },
+                { v: 'GRAND',w: 0.05 },
+            ],
+
+            JP_MULTS: { MINI: 10, MINOR: 25, MAJOR: 100, GRAND: 500 },
+
+            // 3 horizontal paylines across the 5×3 grid (cells 0-14 left→right, top→bottom)
+            PAYLINES: [
+                [0, 1, 2, 3, 4],
+                [5, 6, 7, 8, 9],
+                [10,11,12,13,14],
+            ],
+
+            // ── State ────────────────────────────────────────────────────────────
+            isSpinning:    false,
+            betAmt:        10,
+            phase:         'base',   // 'base' | 'holdSpin'
+            grid:          [],       // 15 cell objects: { type, value, locked }
+            respinCount:   0,
+            totalCoinMult: 0,        // accumulated mult from all coins during H&S
+            autoplay: { active: false, remaining: 0, paused: 0 },
+            DOM: {},
+
+            // ── Init ─────────────────────────────────────────────────────────────
+            init() {
+                this.DOM = {
+                    grid:            document.getElementById('hs-grid'),
+                    spinBtn:         document.getElementById('btn-hs-spin'),
+                    betInput:        document.getElementById('hs-bet'),
+                    status:          document.getElementById('hs-status'),
+                    splash:          document.getElementById('hs-win-splash'),
+                    splashLabel:     document.getElementById('hs-splash-label'),
+                    splashAmt:       document.getElementById('hs-splash-amt'),
+                    autospinBtn:     document.getElementById('hs-btn-autospin'),
+                    autospinCount:   document.getElementById('hs-autospin-count'),
+                    autospinCounter: document.getElementById('hs-autospin-counter'),
+                };
+
+                this.buildGrid();
+                this.updateJackpotDisplay();
+
+                this.DOM.spinBtn.onclick     = () => this.spin();
+                this.DOM.autospinBtn.onclick = () => this.toggleAutoplay();
+                this.DOM.betInput.addEventListener('input', () => this.updateJackpotDisplay());
+            },
+
+            // ── Grid helpers ─────────────────────────────────────────────────────
+            buildGrid() {
+                this.DOM.grid.innerHTML = '';
+                this.grid = [];
+                for (let i = 0; i < 15; i++) {
+                    const el = document.createElement('div');
+                    el.id        = `hs-cell-${i}`;
+                    el.className = 'hs-cell';
+                    this.DOM.grid.appendChild(el);
+                    this.grid.push({ type: 'empty', value: null, locked: false });
+                }
+            },
+
+            renderCell(i, data, animate = false) {
+                const el = document.getElementById(`hs-cell-${i}`);
+                el.className = 'hs-cell';
+                el.innerHTML = '';
+
+                if (data.type === 'symbol') {
+                    const sym = this.SYMBOLS[data.value];
+                    if (sym.id === 'bar') {
+                        el.innerHTML = `<span style="font-size:1.1rem;font-weight:900;
+                                         color:#fbbf24;letter-spacing:-1px;">BAR</span>`;
+                    } else {
+                        el.innerHTML = `<span style="font-size:2.1rem;">${sym.face}</span>`;
+                    }
+
+                } else if (data.type === 'coin') {
+                    const v    = data.value;
+                    const isJP = typeof v === 'string';
+                    el.classList.add(isJP ? `jp-${v.toLowerCase()}-cell` : 'coin-cell');
+                    if (isJP) {
+                        el.innerHTML = `<span style="font-size:1.6rem;">🪙</span>
+                                        <span class="jp-name-label">${v}</span>`;
+                    } else {
+                        el.innerHTML = `<span style="font-size:1.6rem;">🪙</span>
+                                        <span class="coin-val-label">${v}×</span>`;
+                    }
+                    if (animate) el.classList.add('coin-land');
+
+                } else if (data.type === 'respin') {
+                    el.classList.add('respin-eligible');
+                }
+                // type 'empty' → leave plain
+            },
+
+            renderAll() {
+                for (let i = 0; i < 15; i++) this.renderCell(i, this.grid[i]);
+            },
+
+            setStatus(html) { this.DOM.status.innerHTML = html; },
+
+            updateJackpotDisplay() {
+                const bet = Math.max(1, parseFloat(this.DOM.betInput.value) || 10);
+                document.getElementById('jp-grand-val').textContent = `$${(this.JP_MULTS.GRAND * bet).toFixed(2)}`;
+                document.getElementById('jp-major-val').textContent = `$${(this.JP_MULTS.MAJOR * bet).toFixed(2)}`;
+                document.getElementById('jp-minor-val').textContent = `$${(this.JP_MULTS.MINOR * bet).toFixed(2)}`;
+                document.getElementById('jp-mini-val').textContent  = `$${(this.JP_MULTS.MINI  * bet).toFixed(2)}`;
+            },
+
+            // ── RNG ──────────────────────────────────────────────────────────────
+            pickCell() {
+                const total = this.SYM_WEIGHTS.reduce((a, b) => a + b, 0) + this.COIN_WEIGHT;
+                let r = Math.random() * total;
+                for (let i = 0; i < this.SYM_WEIGHTS.length; i++) {
+                    r -= this.SYM_WEIGHTS[i];
+                    if (r <= 0) return { type: 'symbol', value: i, locked: false };
+                }
+                return { type: 'coin', value: this.pickCoinValue(), locked: false };
+            },
+
+            pickCoinValue() {
+                const total = this.COIN_TABLE.reduce((a, b) => a + b.w, 0);
+                let r = Math.random() * total;
+                for (const entry of this.COIN_TABLE) {
+                    r -= entry.w;
+                    if (r <= 0) return entry.v;
+                }
+                return this.COIN_TABLE[0].v;
+            },
+
+            coinMult(v) {
+                return typeof v === 'string' ? this.JP_MULTS[v] : v;
+            },
+
+            // ── Base Spin ────────────────────────────────────────────────────────
+            spin() {
+                if (this.isSpinning) return;
+                const bet = parseFloat(this.DOM.betInput.value);
+                if (isNaN(bet) || bet <= 0 || bet > Platform.balance)
+                    return Platform.showAlert('Invalid bet or insufficient balance!', 'Wager Error');
+
+                this.isSpinning = true;
+                this.betAmt     = bet;
+                this.updateJackpotDisplay();
+                Platform.adjustBalance(-bet);
+                this.DOM.spinBtn.disabled  = true;
+                this.DOM.betInput.disabled = true;
+                this.setStatus('<span>Spinning…</span>');
+
+                // Animate all cells for 650 ms then resolve
+                const syms  = this.SYMBOLS.map(s => s.face);
+                const cells = document.querySelectorAll('#hs-grid .hs-cell');
+                cells.forEach(c => { c.className = 'hs-cell is-spinning'; c.innerHTML = ''; });
+
+                const tick = setInterval(() => {
+                    cells.forEach(c => {
+                        const s = syms[Math.floor(Math.random() * syms.length)];
+                        c.innerHTML = (s === 'BAR')
+                            ? `<span style="font-size:1.1rem;font-weight:900;color:#fbbf24;letter-spacing:-1px;">BAR</span>`
+                            : `<span style="font-size:2.1rem;">${s}</span>`;
+                    });
+                }, 80);
+
+                setTimeout(() => {
+                    clearInterval(tick);
+                    this.resolveBase();
+                }, 650);
+            },
+
+            resolveBase() {
+                for (let i = 0; i < 15; i++) this.grid[i] = this.pickCell();
+                this.renderAll();
+
+                const coinCount = this.grid.filter(c => c.type === 'coin').length;
+
+                if (coinCount >= 6) {
+                    // Trigger Hold & Spin
+                    setTimeout(() => this.startHoldSpin(), 500);
+                } else {
+                    // Evaluate the 3 horizontal paylines
+                    const mult     = this.evalPaylines();
+                    const totalWin = +(mult * this.betAmt).toFixed(2);
+
+                    if (totalWin > 0) {
+                        Platform.adjustBalance(totalWin);
+                        Platform.recordGame('holdSpin', this.betAmt, totalWin);
+                        this.setStatus(`<span class="hs-green">🏆 Won $${totalWin.toFixed(2)}!</span>`);
+                    } else {
+                        Platform.recordGame('holdSpin', this.betAmt, 0);
+                        this.setStatus(`<span style="color:var(--text-muted)">No win — spin again</span>`);
+                    }
+
+                    this.finishBase(totalWin > 0 && totalWin >= this.betAmt * 8);
+                }
+            },
+
+            // ── Paylines ─────────────────────────────────────────────────────────
+            evalPaylines() {
+                let totalMult = 0;
+                const winSet  = new Set();
+
+                for (const line of this.PAYLINES) {
+                    const g0 = this.grid[line[0]];
+                    if (g0.type !== 'symbol') continue;
+                    const symId = g0.value;
+                    let count   = 1;
+                    for (let k = 1; k < 5; k++) {
+                        const g = this.grid[line[k]];
+                        if (g.type === 'symbol' && g.value === symId) count++;
+                        else break;
+                    }
+                    if (count < 3) continue;
+                    totalMult += this.SYMBOLS[symId].pays[count];
+                    for (let k = 0; k < count; k++) winSet.add(line[k]);
+                }
+
+                winSet.forEach(idx => {
+                    document.getElementById(`hs-cell-${idx}`).classList.add('win-glow');
+                });
+                return totalMult;
+            },
+
+            // ── Hold & Spin ──────────────────────────────────────────────────────
+            startHoldSpin() {
+                this.phase         = 'holdSpin';
+                this.respinCount   = 3;
+                this.totalCoinMult = 0;
+
+                // Pause autoplay — H&S requires manual collect
+                if (this.autoplay.active) {
+                    this.autoplay.paused = this.autoplay.remaining;
+                    this.stopAutoplay();
+                }
+
+                // Lock coins, mark everything else as respin-eligible
+                for (let i = 0; i < 15; i++) {
+                    if (this.grid[i].type === 'coin') {
+                        this.grid[i].locked  = true;
+                        this.totalCoinMult  += this.coinMult(this.grid[i].value);
+                    } else {
+                        this.grid[i] = { type: 'respin', value: null, locked: false };
+                    }
+                }
+                this.renderAll();
+                this.updateHSStatus();
+                setTimeout(() => this.doRespin(), 700);
+            },
+
+            doRespin() {
+                if (this.respinCount <= 0) { this.endHoldSpin(); return; }
+
+                const unlocked = [];
+                for (let i = 0; i < 15; i++) {
+                    if (!this.grid[i].locked) unlocked.push(i);
+                }
+                if (unlocked.length === 0) { this.endHoldSpin(); return; }
+
+                // Flash unlocked cells
+                unlocked.forEach(i => {
+                    const el = document.getElementById(`hs-cell-${i}`);
+                    el.className = 'hs-cell respin-eligible is-spinning';
+                    el.innerHTML = '';
+                });
+
+                setTimeout(() => {
+                    this.respinCount--;
+                    let newCoins = 0;
+
+                    for (const i of unlocked) {
+                        if (Math.random() < 0.20) {   // 20% coin chance per empty cell
+                            const v = this.pickCoinValue();
+                            this.grid[i] = { type: 'coin', value: v, locked: true };
+                            this.totalCoinMult += this.coinMult(v);
+                            newCoins++;
+                            this.renderCell(i, this.grid[i], true);
+                        } else {
+                            this.grid[i] = { type: 'respin', value: null, locked: false };
+                            this.renderCell(i, this.grid[i]);
+                        }
+                    }
+
+                    // Any new coin resets counter to 3
+                    if (newCoins > 0) this.respinCount = 3;
+                    this.updateHSStatus();
+
+                    setTimeout(() => this.doRespin(), newCoins > 0 ? 800 : 550);
+                }, 500);
+            },
+
+            updateHSStatus() {
+                const cur = (this.totalCoinMult * this.betAmt).toFixed(2);
+                this.setStatus(
+                    `<span class="hs-fire">🔥 HOLD &amp; SPIN</span>` +
+                    `<span class="hs-gold">Respins: <strong>${this.respinCount}</strong></span>` +
+                    `<span class="hs-green">+$${cur}</span>`
+                );
+            },
+
+            endHoldSpin() {
+                const winAmt = +(this.totalCoinMult * this.betAmt).toFixed(2);
+                Platform.adjustBalance(winAmt);
+                Platform.recordGame('holdSpin', this.betAmt, winAmt);
+
+                // Choose splash headline
+                let label = '🔥 Hold &amp; Spin Complete!';
+                if (this.totalCoinMult >= this.JP_MULTS.GRAND)      label = '🎉 GRAND JACKPOT! 🎉';
+                else if (this.totalCoinMult >= this.JP_MULTS.MAJOR)  label = '🎉 MAJOR JACKPOT!';
+                else if (this.totalCoinMult >= this.JP_MULTS.MINOR)  label = '🏆 Big Win!';
+
+                this.DOM.splashLabel.innerHTML = label;
+                this.DOM.splashAmt.textContent = `$${winAmt.toFixed(2)}`;
+                this.DOM.splash.classList.add('visible');
+            },
+
+            closeSplash() {
+                this.DOM.splash.classList.remove('visible');
+                this.phase             = 'base';
+                this.isSpinning        = false;
+                this.DOM.spinBtn.disabled  = false;
+                this.DOM.betInput.disabled = false;
+                this.setStatus(`<span style="color:var(--text-muted)">Ready to spin!</span>`);
+
+                // Resume autoplay if it was paused for the feature
+                if (this.autoplay.paused > 0) {
+                    const rem = this.autoplay.paused;
+                    this.autoplay.paused    = 0;
+                    this.autoplay.active    = true;
+                    this.autoplay.remaining = rem;
+                    this.DOM.autospinBtn.classList.add('active');
+                    this.DOM.autospinBtn.innerText   = '■ Stop';
+                    this.DOM.autospinCounter.innerText = `${rem} left`;
+                    setTimeout(() => this.nextAutoSpin(), 500);
+                }
+            },
+
+            // Called after base-game outcomes (no splash)
+            finishBase(isBigWin) {
+                this.isSpinning        = false;
+                this.DOM.spinBtn.disabled  = false;
+                this.DOM.betInput.disabled = false;
+
+                if (this.autoplay.active) {
+                    setTimeout(() => this.nextAutoSpin(), isBigWin ? 1800 : 700);
+                }
+            },
+
+            // ── Autoplay ─────────────────────────────────────────────────────────
+            toggleAutoplay() {
+                if (this.autoplay.active) {
+                    this.stopAutoplay();
+                } else {
+                    if (this.isSpinning || this.phase === 'holdSpin') return;
+                    const count = parseInt(this.DOM.autospinCount.value);
+                    this.autoplay.active    = true;
+                    this.autoplay.remaining = count;
+                    this.DOM.autospinBtn.classList.add('active');
+                    this.DOM.autospinBtn.innerText = '■ Stop';
+                    this.nextAutoSpin();
+                }
+            },
+
+            stopAutoplay() {
+                this.autoplay.active    = false;
+                this.autoplay.remaining = 0;
+                this.DOM.autospinBtn.classList.remove('active');
+                this.DOM.autospinBtn.innerText   = '⚡ Autoplay';
+                this.DOM.autospinCounter.innerText = '';
+            },
+
+            nextAutoSpin() {
+                if (!this.autoplay.active || this.autoplay.remaining <= 0) {
+                    this.stopAutoplay(); return;
+                }
+                if (Platform.balance < (parseFloat(this.DOM.betInput.value) || 10)) {
+                    this.stopAutoplay();
+                    this.setStatus('<span style="color:var(--danger)">Autoplay stopped — insufficient balance.</span>');
+                    return;
+                }
+                this.DOM.autospinCounter.innerText = `${this.autoplay.remaining} left`;
+                this.autoplay.remaining--;
+                this.spin();
+            },
+        };
+
+        document.addEventListener('platform:ready', () => HoldSpinGame.init());
+    </script>
+</body>
+</html>

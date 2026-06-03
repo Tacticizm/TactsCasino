@@ -1,89 +1,158 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Profile - Tact's Casino</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* FIX: Ensure the profile view container can expand and scroll naturally */
-        .profile-view-wrapper {
+        .profile-wrap {
             max-width: 900px;
             margin: 0 auto;
             display: flex;
             flex-direction: column;
             gap: 20px;
-            height: 100%;
+            width: 100%;
         }
 
-        .history-card {
-            background: var(--bg-panel);
-            border: 1px solid var(--bg-hover);
+        /* ── Page header row ── */
+        .profile-header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn-refresh {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-muted);
+            padding: 9px 18px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+        .btn-refresh:hover { background: rgba(255,255,255,0.1); color: var(--text-main); }
+        .btn-refresh.spinning .refresh-icon { display: inline-block; animation: spin 0.7s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .refresh-icon { display: inline-block; }
+
+        /* ── Stats cards ── */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 12px;
+        }
+
+        .stat-card {
+            background: linear-gradient(160deg, #0f1e2e, #0a1520);
+            border: 1px solid rgba(255,255,255,0.07);
             border-radius: 12px;
-            padding: 25px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            padding: 16px 18px;
             display: flex;
             flex-direction: column;
-            /* Allows the card to scale dynamically but stay bounded */
-            max-height: calc(100vh - 180px); 
+            gap: 5px;
         }
 
-        /* FIX: Dedicated, independent scrolling body wrapper for the table records */
+        .stat-card-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-card-value {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .stat-card-value.gold  { color: var(--gold); }
+        .stat-card-value.green { color: var(--success); }
+
+        /* ── History card ── */
+        .history-card {
+            background: linear-gradient(160deg, #0f1e2e, #0a1520);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 14px;
+            padding: 22px 24px;
+        }
+
+        .history-card-header {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+
+        .history-card h3 {
+            font-family: 'Rajdhani', sans-serif;
+            color: var(--gold);
+            font-size: 1.2rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .history-count {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+        }
+
         .table-scroll-container {
             overflow-y: auto;
-            margin-top: 15px;
+            margin-top: 14px;
             border-radius: 8px;
-            background: var(--bg-base);
-            border: 1px solid var(--bg-hover);
-            padding-right: 4px; /* Space for custom scrollbar */
+            background: rgba(0,0,0,0.25);
+            border: 1px solid rgba(255,255,255,0.06);
+            max-height: 380px;
         }
 
-        .history-table { 
-            width: 100%; 
-            border-collapse: collapse; 
-        }
-        
-        /* FIX: Make header row sticky so it stays visible while scrolling through 50+ plays */
-        .history-table th { 
+        .history-table { width: 100%; border-collapse: collapse; }
+
+        .history-table th {
             position: sticky;
             top: 0;
-            background: #161f30; /* Dark contrast background for sticky header */
-            padding: 14px; 
-            text-align: left; 
-            color: var(--accent); 
-            text-transform: uppercase; 
-            font-size: 0.85rem; 
-            letter-spacing: 0.5px;
+            background: #0d1a28;
+            padding: 12px 14px;
+            text-align: left;
+            color: var(--accent);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.8px;
             z-index: 10;
-            border-bottom: 2px solid var(--bg-hover);
-        }
-        
-        .history-table td { 
-            padding: 12px 14px; 
-            text-align: left; 
-            border-bottom: 1px solid var(--bg-hover); 
-            font-size: 0.95rem;
-        }
-        
-        .history-table tr:last-child td {
-            border-bottom: none;
+            border-bottom: 1px solid rgba(255,255,255,0.07);
         }
 
-        .win-text { color: var(--success); font-weight: bold; }
+        .history-table td {
+            padding: 11px 14px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 0.9rem;
+        }
+
+        .history-table tr:last-child td { border-bottom: none; }
+        .history-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+        .win-text  { color: var(--success); font-weight: 700; }
         .loss-text { color: var(--text-muted); }
 
-        /* Custom Modern Scrollbar layout for table container viewports */
-        .table-scroll-container::-webkit-scrollbar {
-            width: 6px;
-        }
-        .table-scroll-container::-webkit-scrollbar-track {
-            background: var(--bg-base);
-        }
-        .table-scroll-container::-webkit-scrollbar-thumb {
-            background: var(--bg-hover);
-            border-radius: 10px;
-        }
-        .table-scroll-container::-webkit-scrollbar-thumb:hover {
-            background: #475569;
+        .table-scroll-container::-webkit-scrollbar { width: 5px; }
+        .table-scroll-container::-webkit-scrollbar-track { background: transparent; }
+        .table-scroll-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+
+        .empty-state {
+            text-align: center;
+            padding: 36px 20px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
         }
     </style>
 </head>
@@ -91,29 +160,41 @@
     <div class="sidebar" id="sidebar-container"></div>
     <div class="main-content">
         <div class="top-bar" id="topbar-container"></div>
-        <div class="game-stage" style="align-items: flex-start; overflow-y: auto;">
-            
-            <div class="profile-view-wrapper">
-                <div class="game-header" style="margin-bottom: 0; text-align: left;">
-                    <h2>👤 My Player Profile</h2>
+        <div class="game-stage" style="align-items:flex-start; overflow-y:auto;">
+
+            <div class="profile-wrap">
+                <div class="profile-header-row">
+                    <h2 style="font-family:'Rajdhani',sans-serif; font-size:1.8rem; font-weight:700; color:var(--accent);">👤 My Profile</h2>
+                    <button class="btn-refresh" id="btn-refresh" onclick="ProfilePage.refresh()">
+                        <span class="refresh-icon">↺</span> Refresh
+                    </button>
                 </div>
-                
+
+                <!-- Stats summary -->
+                <div class="stats-grid" id="stats-grid">
+                    <!-- Populated by JS -->
+                </div>
+
+                <!-- Game history -->
                 <div class="history-card">
-                    <h3 style="color: var(--gold); font-size: 1.3rem;">Recent Game History</h3>
-                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 2px;">Tracking your last 50 game rounds across the platform.</p>
-                    
+                    <div class="history-card-header">
+                        <h3>Recent Game History</h3>
+                        <span class="history-count" id="history-count"></span>
+                    </div>
+                    <p style="color:var(--text-muted); font-size:0.82rem;">Your last 50 rounds across all games.</p>
+
                     <div class="table-scroll-container">
                         <table class="history-table">
                             <thead>
                                 <tr>
                                     <th>Date / Time</th>
-                                    <th>Game Title</th>
-                                    <th>Wager Bet</th>
-                                    <th>Final Payout</th>
+                                    <th>Game</th>
+                                    <th>Bet</th>
+                                    <th>Payout</th>
+                                    <th>Result</th>
                                 </tr>
                             </thead>
-                            <tbody id="history-body">
-                                </tbody>
+                            <tbody id="history-body"></tbody>
                         </table>
                     </div>
                 </div>
@@ -130,30 +211,86 @@
     <script>
         Platform.init('profile');
 
-        const tbody = document.getElementById('history-body');
-        const history = Platform.userData.history;
+        const ProfilePage = {
+            render(data) {
+                const stats   = data.stats   || {};
+                const history = data.history || [];
 
-        if (!history || history.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 30px; color: var(--text-muted); font-style: italic;">No betting history logged yet. Go play some rounds!</td></tr>`;
-        } else {
-            history.forEach(game => {
-                const tr = document.createElement('tr');
-                const isWin = game.win > 0;
-                
-                // Capitalize game name cleanly
-                const displayGameName = game.game.charAt(0).toUpperCase() + game.game.slice(1);
-                
-                tr.innerHTML = `
-                    <td style="color: var(--text-muted); font-size: 0.85rem;">${game.date}</td>
-                    <td style="font-weight: bold; color: var(--text-main);">${displayGameName}</td>
-                    <td>$${game.bet.toFixed(2)}</td>
-                    <td class="${isWin ? 'win-text' : 'loss-text'}">
-                        ${isWin ? `+$${game.win.toFixed(2)}` : `$${game.win.toFixed(2)}`}
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
+                // ── Stats cards ──
+                const grid = document.getElementById('stats-grid');
+                const statItems = [
+                    { label: 'Balance',       value: `$${(data.balance || 0).toFixed(2)}`,          cls: 'gold'  },
+                    { label: 'Total Won',      value: `$${(stats.totalWon  || 0).toFixed(2)}`,       cls: 'green' },
+                    { label: 'Slots',          value: `$${(stats.slots     || 0).toFixed(2)}`,       cls: ''      },
+                    { label: 'Sugar Rush',     value: `$${(stats.sugar     || 0).toFixed(2)}`,       cls: ''      },
+                    { label: 'Crash',          value: `$${(stats.crash     || 0).toFixed(2)}`,       cls: ''      },
+                    { label: 'Coin Flip',      value: `$${(stats.coinflip  || 0).toFixed(2)}`,       cls: ''      },
+                    { label: 'Mines',          value: `$${(stats.mines     || 0).toFixed(2)}`,       cls: ''      },
+                    { label: 'Plinko',         value: `$${(stats.plinko    || 0).toFixed(2)}`,       cls: ''      },
+                    { label: 'HiLo',           value: `$${(stats.hilo      || 0).toFixed(2)}`,       cls: ''      },
+                    { label: 'Games Played',   value: history.length,                                cls: ''      },
+                ];
+
+                grid.innerHTML = statItems.map(s => `
+                    <div class="stat-card">
+                        <div class="stat-card-label">${s.label}</div>
+                        <div class="stat-card-value ${s.cls}">${s.value}</div>
+                    </div>
+                `).join('');
+
+                // ── History table ──
+                const tbody = document.getElementById('history-body');
+                const countEl = document.getElementById('history-count');
+                countEl.innerText = history.length ? `${history.length} record${history.length !== 1 ? 's' : ''}` : '';
+
+                if (history.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state">No game history yet — go play some rounds!</div></td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = '';
+                history.forEach(game => {
+                    const profit = game.win - game.bet;
+                    const isWin  = profit > 0;
+                    const name   = game.game.charAt(0).toUpperCase() + game.game.slice(1);
+                    const tr     = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td style="color:var(--text-muted); font-size:0.82rem;">${game.date}</td>
+                        <td style="font-weight:600;">${name}</td>
+                        <td>$${game.bet.toFixed(2)}</td>
+                        <td>$${game.win.toFixed(2)}</td>
+                        <td class="${isWin ? 'win-text' : 'loss-text'}">${isWin ? `+$${profit.toFixed(2)}` : `-$${Math.abs(profit).toFixed(2)}`}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            },
+
+            async refresh() {
+                const btn = document.getElementById('btn-refresh');
+                btn.classList.add('spinning');
+                btn.disabled = true;
+
+                try {
+                    const uid  = Platform.currentUser.uid;
+                    const snap = await firebase.firestore().collection('users').doc(uid).get();
+                    if (snap.exists) {
+                        Platform.userData = snap.data();
+                        Platform.updateDisplay();
+                        this.render(snap.data());
+                    }
+                } catch(e) {
+                    console.error(e);
+                } finally {
+                    btn.classList.remove('spinning');
+                    btn.disabled = false;
+                }
+            }
+        };
+
+        // Wait for Firebase auth + data to be ready before rendering
+        document.addEventListener('platform:ready', () => {
+            ProfilePage.render(Platform.userData);
+        });
     </script>
 </body>
 </html>

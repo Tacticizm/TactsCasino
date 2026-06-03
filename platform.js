@@ -5,7 +5,7 @@ const Platform = {
     confirmCallback: null,
 
     // Pages that are actual games and should show the bets panel
-    _GAME_PAGES: new Set(['slots', 'sugar', 'crash', 'coinflip', 'mines', 'plinko', 'hilo']),
+    _GAME_PAGES: new Set(['slots', 'sugar', 'crash', 'coinflip', 'mines', 'plinko', 'hilo', 'holdSpin']),
 
     // Convenience getter so game pages can still use Platform.balance
     get balance() { return this.userData ? this.userData.balance : 0; },
@@ -52,7 +52,7 @@ const Platform = {
                 username: this.currentUser.displayName,
                 balance: 1000,
                 history: [],
-                stats: { totalWon: 0, slots: 0, sugar: 0, crash: 0, coinflip: 0, mines: 0, plinko: 0, hilo: 0 }
+                stats: { totalWon: 0, slots: 0, sugar: 0, crash: 0, coinflip: 0, mines: 0, plinko: 0, hilo: 0, holdSpin: 0 }
             };
             await ref.set(this.userData);
         }
@@ -212,6 +212,7 @@ const Platform = {
             <a href="mines.html"      class="nav-item ${activePage === 'mines'    ? 'active' : ''}">💣 Mines</a>
             <a href="plinko.html"     class="nav-item ${activePage === 'plinko'   ? 'active' : ''}">🔽 Plinko</a>
             <a href="hilo.html"       class="nav-item ${activePage === 'hilo'     ? 'active' : ''}">📉 HiLo</a>
+            <a href="hold-spin.html"  class="nav-item ${activePage === 'holdSpin' ? 'active' : ''}">🔥 Hold &amp; Spin</a>
 
             <div class="nav-section-label" style="margin-top:20px;">Community</div>
             <a href="leaderboard.html" class="nav-item ${activePage === 'leaderboard' ? 'active' : ''}">🏆 Leaderboard</a>

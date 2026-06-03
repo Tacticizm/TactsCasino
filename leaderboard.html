@@ -165,6 +165,10 @@
                         <h3>🔽 Plinko</h3>
                         <div id="lb-plinko"><div class="lb-loading">Loading…</div></div>
                     </div>
+                    <div class="lb-card">
+                        <h3>🔥 Hold &amp; Spin</h3>
+                        <div id="lb-holdspin"><div class="lb-loading">Loading…</div></div>
+                    </div>
                 </div>
             </div>
 
@@ -186,7 +190,7 @@
                 btn.disabled = true;
 
                 // Show loading state
-                ['lb-total','lb-sugar','lb-crash','lb-slots','lb-mines','lb-plinko'].forEach(id => {
+                ['lb-total','lb-sugar','lb-crash','lb-slots','lb-mines','lb-plinko','lb-holdspin'].forEach(id => {
                     document.getElementById(id).innerHTML = '<div class="lb-loading">Loading…</div>';
                 });
 
@@ -204,10 +208,11 @@
                     this.render('lb-crash',  users, 'crash');
                     this.render('lb-slots',  users, 'slots');
                     this.render('lb-mines',  users, 'mines');
-                    this.render('lb-plinko', users, 'plinko');
+                    this.render('lb-plinko',    users, 'plinko');
+                    this.render('lb-holdspin',  users, 'holdSpin');
                 } catch (e) {
                     console.error(e);
-                    ['lb-total','lb-sugar','lb-crash','lb-slots','lb-mines','lb-plinko'].forEach(id => {
+                    ['lb-total','lb-sugar','lb-crash','lb-slots','lb-mines','lb-plinko','lb-holdspin'].forEach(id => {
                         document.getElementById(id).innerHTML = '<div class="lb-empty">Failed to load data.</div>';
                     });
                 } finally {
