@@ -46,13 +46,8 @@ export function createProfile() {
       storage.set('muted', this.muted);
     },
 
-    // top up if broke (simple convenience for a demo game)
+    // Balance is owned by the parent casino — never auto-refill.
     topUpIfBroke() {
-      if (this.balance < KNOBS.betLevels[0]) {
-        this.balance = KNOBS.startingBalance;
-        this._persist();
-        return true;
-      }
       return false;
     },
 

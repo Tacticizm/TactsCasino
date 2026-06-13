@@ -66,7 +66,6 @@
             display: block;
         }
 
-        /* Make game-stage flex so the iframe shell can fill remaining height */
         .game-stage {
             display: flex !important;
             flex-direction: column !important;
@@ -80,21 +79,11 @@
         <div class="top-bar" id="topbar-container"></div>
         <div class="game-stage">
             <div class="ph-game-wrap">
-
                 <div class="ph-game-header">
                     <div class="ph-provider-tag">🍕 Pizza Hero Gaming</div>
                     <div class="ph-game-title">Slice &amp; Spin</div>
                 </div>
-
-                <div class="ph-iframe-shell">
-                    <iframe
-                        src="pizza-hero/slice-and-spin/dist/index.html"
-                        title="Slice &amp; Spin"
-                        allowfullscreen
-                        sandbox="allow-scripts allow-same-origin allow-popups">
-                    </iframe>
-                </div>
-
+                <div class="ph-iframe-shell" id="iframe-shell"></div>
             </div>
         </div>
     </div>
@@ -106,6 +95,37 @@
     <script src="platform.js"></script>
     <script>
         Platform.init('sliceAndSpin');
+
+        var BALANCE_KEY  = 'phg_holdspin_balance';
+        var _saveTimer   = null;
+        var _gameIframe  = null;
+
+        document.addEventListener('platform:ready', function () {
+            // 1. Seed localStorage with the real casino balance BEFORE iframe loads
+            localStorage.setItem(BALANCE_KEY, JSON.stringify(Platform.balance));
+
+            // 2. Now create and inject the iframe so the game reads the correct value
+            _gameIframe = document.createElement('iframe');
+            _gameIframe.src             = 'pizza-hero/slice-and-spin/dist/index.html';
+            _gameIframe.title           = 'Slice & Spin';
+            _gameIframe.allowFullscreen = true;
+            _gameIframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-popups');
+            document.getElementById('iframe-shell').appendChild(_gameIframe);
+        });
+
+        // 3. Sync balance updates from the game back to the casino platform
+        window.addEventListener('message', function (e) {
+            if (!e.data || e.data.type !== 'PHG_BALANCE') return;
+            var newBal = e.data.balance;
+            if (typeof newBal !== 'number' || !isFinite(newBal) || newBal < 0) return;
+
+            Platform.userData.balance = Math.round(newBal * 100) / 100;
+            Platform.updateDisplay();
+
+            // Debounce Firestore saves to avoid hammering on every spin tick
+            clearTimeout(_saveTimer);
+            _saveTimer = setTimeout(function () { Platform.saveUserData(); }, 1200);
+        });
     </script>
 </body>
 </html>
