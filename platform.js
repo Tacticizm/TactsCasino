@@ -230,7 +230,8 @@ const Platform = {
             <a href="hold-spin.html"  class="nav-item ${activePage === 'holdSpin' ? 'active' : ''}">🔥 Hold &amp; Spin</a>
 
             <div class="nav-section-label" style="margin-top:20px;">🍕 Pizza Hero Gaming</div>
-            <a href="slice-and-spin.html" class="nav-item ${activePage === 'sliceAndSpin' ? 'active' : ''}" style="${activePage === 'sliceAndSpin' ? '' : 'color:#ff7a45;opacity:0.85;'}">🍕 Slice &amp; Spin</a>
+            <a href="slice-and-spin.html"  class="nav-item ${activePage === 'sliceAndSpin'  ? 'active' : ''}" style="${activePage === 'sliceAndSpin'  ? '' : 'color:#ff7a45;opacity:0.85;'}">🍕 Slice &amp; Spin</a>
+            <a href="dough-or-alive.html"  class="nav-item ${activePage === 'doughOrAlive'  ? 'active' : ''}" style="${activePage === 'doughOrAlive'  ? '' : 'color:#ff7a45;opacity:0.85;'}">🤠 Dough or Alive</a>
 
             <div class="nav-section-label" style="margin-top:20px;">Community</div>
             <a href="leaderboard.html" class="nav-item ${activePage === 'leaderboard' ? 'active' : ''}">🏆 Leaderboard</a>
