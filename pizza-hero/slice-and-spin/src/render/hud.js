@@ -182,7 +182,7 @@ export function createHud(root) {
   });
 
   function num(el, v) {
-    el.textContent = Math.round(v).toLocaleString();
+    el.textContent = Number(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
   return {
