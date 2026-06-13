@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Slice &amp; Spin - Tact's Casino</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .ph-game-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            gap: 12px;
+        }
+
+        .ph-game-header {
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .ph-provider-tag {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(180,30,0,0.18);
+            border: 1px solid rgba(255,100,50,0.22);
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #ff7a45;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+        }
+
+        .ph-game-title {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .ph-iframe-shell {
+            width: 100%;
+            max-width: 900px;
+            flex: 1;
+            min-height: 0;
+            border-radius: 14px;
+            overflow: hidden;
+            border: 1px solid rgba(255,100,50,0.15);
+            box-shadow: 0 0 60px rgba(180,30,0,0.18),
+                        0 8px 32px rgba(0,0,0,0.5);
+            background: #1a0e08;
+            position: relative;
+        }
+
+        .ph-iframe-shell iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: block;
+        }
+
+        /* Make game-stage flex so the iframe shell can fill remaining height */
+        .game-stage {
+            display: flex !important;
+            flex-direction: column !important;
+            padding: 20px 24px !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar" id="sidebar-container"></div>
+    <div class="main-content">
+        <div class="top-bar" id="topbar-container"></div>
+        <div class="game-stage">
+            <div class="ph-game-wrap">
+
+                <div class="ph-game-header">
+                    <div class="ph-provider-tag">🍕 Pizza Hero Gaming</div>
+                    <div class="ph-game-title">Slice &amp; Spin</div>
+                </div>
+
+                <div class="ph-iframe-shell">
+                    <iframe
+                        src="pizza-hero/slice-and-spin/dist/index.html"
+                        title="Slice &amp; Spin"
+                        allowfullscreen
+                        sandbox="allow-scripts allow-same-origin allow-popups">
+                    </iframe>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-init.js"></script>
+    <script src="platform.js"></script>
+    <script>
+        Platform.init('sliceAndSpin');
+    </script>
+</body>
+</html>
