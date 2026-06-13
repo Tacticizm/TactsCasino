@@ -11,35 +11,23 @@
     <!-- Tact's Casino balance bridge — must run before game module -->
     <script>
     (function () {
-      var BALANCE_KEY  = 'phg_holdspin_balance';
-      var MIN_BET      = 10;
-      var _lastBalance = null;
-      var _orig        = Storage.prototype.setItem;
+      var BALANCE_KEY = 'phg_holdspin_balance';
+      var _orig = Storage.prototype.setItem;
 
       Storage.prototype.setItem = function (k, v) {
-        if (k === BALANCE_KEY) {
-          var num = JSON.parse(v);
-          if (typeof num === 'number') {
-            var prevLow = _lastBalance !== null && _lastBalance < MIN_BET;
-            var isTopUp = prevLow && num > _lastBalance * 5;
-            _lastBalance = num;
-            if (isTopUp) return;
-            _orig.call(this, k, v);
-            try { window.parent.postMessage({ type: 'PHG_BALANCE', balance: num }, '*'); } catch (_) {}
-            return;
-          }
-        }
         _orig.call(this, k, v);
+        if (k === BALANCE_KEY) {
+          try { window.parent.postMessage({ type: 'PHG_BALANCE', balance: JSON.parse(v) }, '*'); } catch (_) {}
+        }
       };
 
       window.addEventListener('message', function (e) {
         if (!e.data || e.data.type !== 'PHG_SET_BALANCE') return;
-        _lastBalance = e.data.balance;
         _orig.call(localStorage, BALANCE_KEY, JSON.stringify(e.data.balance));
       });
     })();
     </script>
-    <script type="module" crossorigin src="./assets/index-DCzRuuPa.js"></script>
+    <script type="module" crossorigin src="./assets/index-QCzwMcAu.js"></script>
     <link rel="stylesheet" crossorigin href="./assets/index-B56X3xUC.css">
   </head>
   <body>

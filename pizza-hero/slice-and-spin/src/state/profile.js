@@ -46,11 +46,6 @@ export function createProfile() {
       storage.set('muted', this.muted);
     },
 
-    // Balance is owned by the parent casino — never auto-refill.
-    topUpIfBroke() {
-      return false;
-    },
-
     _persist() {
       storage.set('balance', this.balance);
     },

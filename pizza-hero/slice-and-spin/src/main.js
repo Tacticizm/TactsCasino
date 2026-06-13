@@ -224,12 +224,7 @@ document.addEventListener('visibilitychange', () => {
 // ---- main spin sequence ----
 async function startSpin() {
   if (!profile.canBet()) {
-    if (profile.topUpIfBroke()) {
-      refreshHud();
-      hud.banner('BALANCE REFILLED');
-    } else {
-      hud.banner('RAISE BET / NO FUNDS');
-    }
+    hud.banner('RAISE BET / NO FUNDS');
     return;
   }
 
